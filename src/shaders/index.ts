@@ -1,14 +1,17 @@
 //foreach_shader import * as $ from './$.glsl';
-import * as white from './white.glsl';//_generated
+import * as bufferCopy from './bufferCopy.glsl';//_generated
+import * as drawNoise from './drawNoise.glsl';//_generated
 
 type ShaderCollection = {
     //foreach_shader readonly $: WebGLShader,
-    readonly white: WebGLShader,//_generated
+    readonly bufferCopy: WebGLShader,//_generated
+    readonly drawNoise: WebGLShader,//_generated
 };
 
 const buildCollection = (gl: WebGLRenderingContext): ShaderCollection => ({
-    //foreach_shader $: compileShader(gl, '$', $),
-    white: compileShader(gl, 'white', white),//_generated
+    //foreach_shader $: compileShader(gl, '$', $.default),
+    bufferCopy: compileShader(gl, 'bufferCopy', bufferCopy.default),//_generated
+    drawNoise: compileShader(gl, 'drawNoise', drawNoise.default),//_generated
 });
 
 const compiledShaders: { [canvasId: string]: ShaderCollection } = {};
@@ -34,6 +37,7 @@ const compileShader = (gl: WebGLRenderingContext, name: string, body: string): W
     const vertLog = gl.getShaderInfoLog(vertShader);
     if (vertLog === null || vertLog.length > 0) {
         document.body.innerHTML = errorHTML('vertex', name, vertLog as string);
+        console.log(body);
         throw new Error('Error compiling shader: ' + name);
     }
 
