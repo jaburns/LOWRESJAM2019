@@ -1,7 +1,7 @@
 import { Cave } from 'caveGenerator';
 import flatten = require('lodash/flatten');
 import { getShaders } from 'shaders';
-import { BufferRenderer } from 'graphics/bufferRenderer';
+import { drawBuffer } from 'graphics/bufferRenderer';
 import { GaussianBlur } from 'graphics/gaussianBlur';
 import { FrameBufferTexture } from 'graphics/frameBufferTexture';
 import { mat4, vec3 } from 'gl-matrix';
@@ -15,6 +15,11 @@ const m4x = mat4.create();
 type SurfaceInfoBuffers = {
     readonly depth: WebGLTexture,
     readonly normal: WebGLTexture,
+};
+
+export type CaveTextures = {
+    readonly cave: WebGLTexture,
+    readonly bg: WebGLTexture,
 };
 
 const getFlatVerts = (cave: Const<Cave>): number[] =>
@@ -39,17 +44,17 @@ const drawRockTexture = (gl: WebGLRenderingContext): WebGLTexture => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, rockNormalsBuffer.framebuffer);
     gl.viewport(0, 0, ROCK_NORMAL_MAP_SIZE, ROCK_NORMAL_MAP_SIZE);
 
-    const rockNormalsRenderer = new BufferRenderer(gl, getShaders(gl).drawRockTexture);
-    rockNormalsRenderer.draw(null, (gl, shader) => {
+    drawBuffer(gl, getShaders(gl).drawRockTexture, null, shader => {
         gl.uniform2f(gl.getUniformLocation(shader, "u_resolution"), ROCK_NORMAL_MAP_SIZE, ROCK_NORMAL_MAP_SIZE);
     });
 
-    rockNormalsRenderer.release();
     return rockNormalsBuffer.releaseTexture();
 };
 
-const buildSurfaceInfoBuffers = (gl: WebGLRenderingContext, size: number, vertexBuffer: WebGLBuffer, indexBuffer: WebGLBuffer, indexBufferLen: number): SurfaceInfoBuffers => {
-    const normalsBlit = new BufferRenderer(gl, getShaders(gl).normals);
+const buildSurfaceInfoBuffers = (
+    gl: WebGLRenderingContext, size: number, vertexBuffer: WebGLBuffer,
+    indexBuffer: WebGLBuffer, indexBufferLen: number
+): SurfaceInfoBuffers => {
     const gaussBlur0 = new GaussianBlur(gl, size, size);
     const gaussBlur1 = new GaussianBlur(gl, size, size);
     const frameBufferTex = new FrameBufferTexture(gl, size, size);
@@ -75,7 +80,7 @@ const buildSurfaceInfoBuffers = (gl: WebGLRenderingContext, size: number, vertex
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBufferTex.framebuffer);
     gl.viewport(0, 0, size, size);
 
-    normalsBlit.draw(gaussBlur0.resultTexture, (gl, shader) => {
+    drawBuffer(gl, getShaders(gl).normals, gaussBlur0.resultTexture, shader => {
         gl.uniform2f(gl.getUniformLocation(shader, "u_resolution"), size, size);
     });
 
@@ -84,14 +89,13 @@ const buildSurfaceInfoBuffers = (gl: WebGLRenderingContext, size: number, vertex
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    normalsBlit.release();
     const depth = gaussBlur0.releaseTexture();
     const normal = gaussBlur1.releaseTexture();
 
     return { depth, normal };
 };
 
-export const drawCave = (gl: WebGLRenderingContext, cave: Const<Cave>, size: number): WebGLTexture => {
+export const drawCave = (gl: WebGLRenderingContext, cave: Const<Cave>, size: number): CaveTextures => {
     const resultBuffer = new FrameBufferTexture(gl, size, size, 'nearest');
 
     const vertexBuffer = gl.createBuffer() as WebGLBuffer;
@@ -110,6 +114,8 @@ export const drawCave = (gl: WebGLRenderingContext, cave: Const<Cave>, size: num
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, resultBuffer.framebuffer);
     gl.viewport(0, 0, size, size);
+    gl.clearColor(0, 1, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
     const shader = getShaders(gl).drawCave;
     gl.useProgram(shader);
@@ -143,5 +149,8 @@ export const drawCave = (gl: WebGLRenderingContext, cave: Const<Cave>, size: num
     gl.deleteTexture(surfaceInfoBuffers.depth);
     gl.deleteTexture(surfaceInfoBuffers.normal);
 
-    return resultBuffer.releaseTexture();
+    return {
+        cave: resultBuffer.releaseTexture(),
+        bg: normalsBuffer,
+    };
 };

@@ -1,6 +1,7 @@
 //foreach_shader import * as $ from './$.glsl';
 import * as bufferCopy from './bufferCopy.glsl';//_generated
 import * as drawCave from './drawCave.glsl';//_generated
+import * as drawFrame from './drawFrame.glsl';//_generated
 import * as drawRockTexture from './drawRockTexture.glsl';//_generated
 import * as flatWhite from './flatWhite.glsl';//_generated
 import * as gaussianBlur from './gaussianBlur.glsl';//_generated
@@ -10,6 +11,7 @@ type ShaderCollection = {
     //foreach_shader readonly $: WebGLShader,
     readonly bufferCopy: WebGLShader,//_generated
     readonly drawCave: WebGLShader,//_generated
+    readonly drawFrame: WebGLShader,//_generated
     readonly drawRockTexture: WebGLShader,//_generated
     readonly flatWhite: WebGLShader,//_generated
     readonly gaussianBlur: WebGLShader,//_generated
@@ -20,6 +22,7 @@ const buildCollection = (gl: WebGLRenderingContext): ShaderCollection => ({
     //foreach_shader $: compileShader(gl, '$', $.default),
     bufferCopy: compileShader(gl, 'bufferCopy', bufferCopy.default),//_generated
     drawCave: compileShader(gl, 'drawCave', drawCave.default),//_generated
+    drawFrame: compileShader(gl, 'drawFrame', drawFrame.default),//_generated
     drawRockTexture: compileShader(gl, 'drawRockTexture', drawRockTexture.default),//_generated
     flatWhite: compileShader(gl, 'flatWhite', flatWhite.default),//_generated
     gaussianBlur: compileShader(gl, 'gaussianBlur', gaussianBlur.default),//_generated
