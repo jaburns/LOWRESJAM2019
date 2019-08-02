@@ -4,7 +4,7 @@ export class FrameBufferTexture {
 
     private readonly gl: WebGLRenderingContext;
 
-    constructor(gl: WebGLRenderingContext, width: number, height: number, filter: 'linear'|'nearest') {
+    constructor(gl: WebGLRenderingContext, width: number, height: number, filter: 'linear'|'nearest' = 'linear') {
         this.gl = gl;
 
         this.framebuffer = gl.createFramebuffer() as WebGLFramebuffer;
@@ -17,8 +17,8 @@ export class FrameBufferTexture {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filterFlag);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filterFlag); 
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
         
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0); 
     }

@@ -1,17 +1,29 @@
 //foreach_shader import * as $ from './$.glsl';
 import * as bufferCopy from './bufferCopy.glsl';//_generated
-import * as drawNoise from './drawNoise.glsl';//_generated
+import * as drawCave from './drawCave.glsl';//_generated
+import * as drawRockTexture from './drawRockTexture.glsl';//_generated
+import * as flatWhite from './flatWhite.glsl';//_generated
+import * as gaussianBlur from './gaussianBlur.glsl';//_generated
+import * as normals from './normals.glsl';//_generated
 
 type ShaderCollection = {
     //foreach_shader readonly $: WebGLShader,
     readonly bufferCopy: WebGLShader,//_generated
-    readonly drawNoise: WebGLShader,//_generated
+    readonly drawCave: WebGLShader,//_generated
+    readonly drawRockTexture: WebGLShader,//_generated
+    readonly flatWhite: WebGLShader,//_generated
+    readonly gaussianBlur: WebGLShader,//_generated
+    readonly normals: WebGLShader,//_generated
 };
 
 const buildCollection = (gl: WebGLRenderingContext): ShaderCollection => ({
     //foreach_shader $: compileShader(gl, '$', $.default),
     bufferCopy: compileShader(gl, 'bufferCopy', bufferCopy.default),//_generated
-    drawNoise: compileShader(gl, 'drawNoise', drawNoise.default),//_generated
+    drawCave: compileShader(gl, 'drawCave', drawCave.default),//_generated
+    drawRockTexture: compileShader(gl, 'drawRockTexture', drawRockTexture.default),//_generated
+    flatWhite: compileShader(gl, 'flatWhite', flatWhite.default),//_generated
+    gaussianBlur: compileShader(gl, 'gaussianBlur', gaussianBlur.default),//_generated
+    normals: compileShader(gl, 'normals', normals.default),//_generated
 });
 
 const compiledShaders: { [canvasId: string]: ShaderCollection } = {};
