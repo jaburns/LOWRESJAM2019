@@ -74,13 +74,13 @@ const fixSingleTileBridges = (grid: WriteGrid<boolean>): void => {
     });
 };
 
-export const generateCave = (seed: number): Cave => 
-    generateCaveVerbose(seed).cave;
+export const generateCave = (seed: number, scaleDown: number = 1): Cave => 
+    generateCaveVerbose(seed, scaleDown).cave;
 
 export const generatePartialAutomatonResult = (seed: number, generation: number): Grid<boolean> =>
     runCellularAutomaton(75, 75, seed, 0.48, 5, 4, generation);
 
-export const generateCaveVerbose = (seed: number): { cave: Cave, details: CaveBuildDetails } => {
+export const generateCaveVerbose = (seed: number, scaleDown: number): { cave: Cave, details: CaveBuildDetails } => {
     const automatonResult = runCellularAutomaton(75, 75, seed, 0.48, 5, 4, 30);
 
     const coloredGrid = Grid.map(automatonResult, (x, y, val) => val ? -1 : 0);
@@ -98,7 +98,9 @@ export const generateCaveVerbose = (seed: number): { cave: Cave, details: CaveBu
         .sort((a, b) => b.area - a.area)
         [0].i;
 
-    const smoothContours = findContoursResult.contours.map(x => smoothCurve(x, 10, 0.7));
+    const smoothContours = findContoursResult.contours.map(x => smoothCurve(x, 10, 0.7)).map(x => x.map(x =>
+        vec2.fromValues((x[0]-.5)*scaleDown+.5, (x[1]-.5)*scaleDown+.5)
+    ));
 
     const BOUNDS = 1.0;
 

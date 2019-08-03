@@ -117,7 +117,7 @@ export const drawCave = (gl: WebGLRenderingContext, cave: Const<Cave>, size: num
     gl.clearColor(0, 1, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    const shader = getShaders(gl).drawCave;
+    const shader = getShaders(gl).drawCaveMap;
     gl.useProgram(shader);
 
     mat4.identity(m4x);
