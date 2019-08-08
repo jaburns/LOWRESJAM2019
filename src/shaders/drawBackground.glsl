@@ -27,13 +27,13 @@ varying vec2 v_uv;
         vec4 normalMapLookup = texture2D(u_tex, lookupUV);
 
         vec2 fromCam = lookupUV - u_camera;
-        float dist = length(fromCam);
+        float dist = .5*length(fromCam);
         vec2 dir = normalize(fromCam);
 
         float radialAmount = .8 * clamp(1. - dist*2.*u_bgRes/u_screenRes, 0., 1.);
         float angleAmount = dot(dir, 2.*normalMapLookup.xy-1.);
 
-        vec3 color = vec3(1,1,1) * angleAmount * radialAmount * radialAmount;
+        vec3 color = vec3(.1,1,0) * angleAmount * radialAmount * radialAmount;
 
         gl_FragColor = vec4(color, normalMapLookup.a);
     }

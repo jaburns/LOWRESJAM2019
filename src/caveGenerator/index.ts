@@ -98,9 +98,9 @@ export const generateCaveVerbose = (seed: number, scaleDown: number): { cave: Ca
         .sort((a, b) => b.area - a.area)
         [0].i;
 
-    const smoothContours = findContoursResult.contours.map(x => smoothCurve(x, 10, 0.7)).map(x => x.map(x =>
-        vec2.fromValues((x[0]-.5)*scaleDown+.5, (x[1]-.5)*scaleDown+.5)
-    ));
+    const smoothContours = findContoursResult.contours
+        .map(x => smoothCurve(x, 10, 0.7))
+        .map(x => x.map(x => vec2.fromValues(x[0]*scaleDown, x[1]*scaleDown)));
 
     const BOUNDS = 1.0;
 

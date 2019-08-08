@@ -5,7 +5,7 @@ import { drawBuffer } from 'graphics/bufferRenderer';
 import { GaussianBlur } from 'graphics/gaussianBlur';
 import { FrameBufferTexture } from 'graphics/frameBufferTexture';
 import { mat4, vec3 } from 'gl-matrix';
-import { Const, unconst } from 'utils/lang';
+import { Const } from 'utils/lang';
 
 const ROCK_NORMAL_MAP_SIZE = 1024;
 const SURFACE_INFO_BUFFER_SIZE = 1024;
@@ -23,7 +23,7 @@ export type CaveTextures = {
 };
 
 const getFlatVerts = (cave: Const<Cave>): number[] =>
-    flatten(flatten(cave.edges).map(x => [x[0], -x[1]]));
+    flatten(flatten(cave.edges).map(x => [x[0], x[1]]));
 
 const getFlatIndices = (cave: Const<Cave>): number[] => {
     let baseCount = 0;

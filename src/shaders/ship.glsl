@@ -17,7 +17,7 @@ varying vec2 v_uv;
 
     void main()
     {
-        gl_FragColor = length(v_uv - vec2(.5,.5)) < .04 ? vec4(1,1,1,1) : vec4(0,0,0,0);
+        gl_FragColor = length(v_uv - vec2(.5,.5)) < .04 ? vec4(.1,1,0,1) : vec4(0,0,0,0);
     }
 
 #endif

@@ -1,95 +1,40 @@
-import { drawBuffer } from "graphics/bufferRenderer";
-import { getShaders } from "shaders";
-import { FrameBufferTexture } from "graphics/frameBufferTexture";
 import { generateCave } from "caveGenerator";
-import { drawCave } from "graphics/caveRenderer";
-import { InputGrabber } from "utils/inputGrabber";
+import { GameRenderer } from "graphics/gameRenderer";
+import { GameState } from "gameplay/state";
+import { InputGrabber } from "gameplay/inputs";
+import { BasicGameRenderer } from "graphics/basicGameRenderer";
 
-const MAP_SIZE = 512; // 256;
+const FRAME_SECONDS = 1 / 60;
 
-const gl = (document.getElementById('game-canvas') as HTMLCanvasElement).getContext('webgl') as WebGLRenderingContext;
+const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+const deb = document.getElementById('debug-canvas') as HTMLCanvasElement;
 
-gl.enable(gl.BLEND);
-gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-gl.disable(gl.DEPTH_TEST);
+const cave = generateCave(1339, .7);
+const renderer = new GameRenderer(canvas, cave);
+const debber = new BasicGameRenderer(deb, cave);
+const startTime = (new Date).getTime() / 1000;
+const inputGrabber = new InputGrabber(document);
 
-const cave = generateCave(1338, .7);
-const caveTextures = drawCave(gl, cave, MAP_SIZE);
-const screenBuffer = new FrameBufferTexture(gl, 64, 64, 'nearest');
+console.log(cave);
 
-const keys: {[code:number]: boolean} = {};
-document.onkeydown = k => keys[k.keyCode] = true;
-document.onkeyup = k => delete keys[k.keyCode];
-
-const startTime = (new Date).getTime();
-
-let shipVel = {x:0,y:0};
-let shipPos = {x:.5, y:.5};
-
-
-
-const makeSmolBG = (): WebGLTexture => {
-    const frameBuffer = new FrameBufferTexture(gl, 128, 128, 'linear');
-    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer.framebuffer);
-    gl.viewport(0, 0, 128, 128);
-
-    drawBuffer(gl, getShaders(gl).bufferCopyScale, caveTextures.bg);
-    
-    return frameBuffer.releaseTexture();
-};
-
-const smolBG = makeSmolBG();
-
+let previousTime = startTime;
+let frameAccTime = 0;
+let gameState = GameState.create(cave);
 
 const frame = () => {
-    if (keys[37]) shipVel.x -= 2e-5;
-    if (keys[38]) shipVel.y += 5e-5;
-    if (keys[39]) shipVel.x += 2e-5;
+    const newTime = (new Date).getTime() / 1000;
+    const deltaTime = newTime - previousTime;
+    const monotonicTime = newTime - startTime;
+    previousTime = newTime;
 
-    shipVel.y -= 2.5e-5;
+    frameAccTime += deltaTime;
+    if (frameAccTime >= FRAME_SECONDS) {
+        frameAccTime -= FRAME_SECONDS;
+        gameState = GameState.step(gameState, inputGrabber.getCurrentState());
+    }
 
-
-    shipPos.x += shipVel.x;
-    shipPos.y += shipVel.y;
-
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, screenBuffer.framebuffer);
-    gl.viewport(0, 0, 64, 64);
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    const t = ((new Date).getTime() - startTime) / 1000;
-
-
-    drawBuffer(gl, getShaders(gl).drawBackground, null, shader => {
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, smolBG);
-        gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
-
-        gl.uniform1f(gl.getUniformLocation(shader, "u_bgRes"), 128);
-        gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
-        gl.uniform2f(gl.getUniformLocation(shader, "u_camera"), shipPos.x, shipPos.y);
-        gl.uniform1f(gl.getUniformLocation(shader, "u_time"), (new Date).getTime() - startTime);
-    });
-
-    drawBuffer(gl, getShaders(gl).ship, null, shader => {
-    });
-
-    drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, caveTextures.cave);
-        gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
-
-        gl.uniform1f(gl.getUniformLocation(shader, "u_caveRes"), MAP_SIZE);
-        gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
-        gl.uniform2f(gl.getUniformLocation(shader, "u_camera"), shipPos.x, shipPos.y);
-        gl.uniform1f(gl.getUniformLocation(shader, "u_time"), t);
-    });
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-    drawBuffer(gl, getShaders(gl).bufferCopy, screenBuffer.texture);
+    renderer.draw(gameState, monotonicTime);
+    debber.draw(gameState, monotonicTime);
 
     requestAnimationFrame(frame);
 };
