@@ -5,6 +5,7 @@ uniform float u_bgRes;
 uniform float u_screenRes;
 uniform vec2 u_camera;
 uniform float u_time;
+uniform float u_fireLevel;
 
 varying vec2 v_uv;
 
@@ -30,10 +31,15 @@ varying vec2 v_uv;
         float dist = .5*length(fromCam);
         vec2 dir = normalize(fromCam);
 
-        float radialAmount = .8 * clamp(1. - dist*2.*u_bgRes/u_screenRes, 0., 1.);
+        float radialAmount = clamp(1.2*(1. - dist*2.*u_bgRes/u_screenRes), 0.4, 1.);
         float angleAmount = dot(dir, 2.*normalMapLookup.xy-1.);
+        vec3 colorA = vec3(1,1,1) * angleAmount * radialAmount * radialAmount;
 
-        vec3 color = vec3(.1,1,0) * angleAmount * radialAmount * radialAmount;
+        float radialAmountB = clamp(.8*(1. - dist*4.*u_bgRes/u_screenRes), 0.1, 1.);
+        float angleAmountB = dot(dir, 2.*normalMapLookup.xy-1.);
+        vec3 colorB = vec3(1,0,0) * angleAmountB * radialAmountB * radialAmountB;
+
+        vec3 color = .5 * (.4*colorA + u_fireLevel*colorB);
 
         gl_FragColor = vec4(color, normalMapLookup.a);
     }

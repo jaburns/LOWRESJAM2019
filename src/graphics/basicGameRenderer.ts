@@ -4,18 +4,16 @@ import { vec2 } from "gl-matrix";
 
 export class BasicGameRenderer {
     private readonly ctx: CanvasRenderingContext2D;
-    private readonly cave: Cave;
     
-    constructor(canvas: HTMLCanvasElement, cave: Cave) {
+    constructor(canvas: HTMLCanvasElement) {
         this.ctx = canvas.getContext('2d')!;
-        this.cave = cave;
     }
 
     draw(state: GameState, monotonicTime: number) {
         const ctx = this.ctx;
 
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = '#222';
 
         const f = (v:vec2) => ([
             (v[0] + 1) * ctx.canvas.width / 2,
@@ -39,7 +37,23 @@ export class BasicGameRenderer {
 
         ctx.fillStyle = '#f00';
         ctx.beginPath();
-        ctx.arc(fp[0], fp[1], 3, 0, 2*Math.PI);
+        ctx.arc(fp[0], fp[1], 1, 0, 2*Math.PI);
         ctx.fill();
+
+        state.latestCollisions.forEach(({ a, b, t }) => {
+            if (a === b) {
+                ctx.fillStyle = '#f00';
+                ctx.beginPath();
+                ctx.arc(f(a)[0], f(a)[1], 1, 0, 2*Math.PI);
+                ctx.fill();
+            } else {
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#0f0';
+                ctx.beginPath();
+                ctx.moveTo(f(a)[0], f(a)[1]);
+                ctx.lineTo(f(b)[0], f(b)[1]);
+                ctx.stroke();
+            }
+        });
     }
 }

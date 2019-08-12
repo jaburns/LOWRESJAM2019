@@ -3,6 +3,8 @@ import { vec2, vec3 } from "gl-matrix";
 type CollisionResult = {
     normal: vec2,
     restore: vec2,
+    lineA: vec2,
+    lineB: vec2,
 };
 
 class Vec2 {
@@ -38,7 +40,7 @@ class Vec2 {
     }
 
     cross(a: Vec2): number {
-        return vec2.cross(vec3.create(), this.v, vec2.fromValues(a.x, a.y))[2]; // maybe negative of this
+        return vec2.cross(vec3.create(), this.v, vec2.fromValues(a.x, a.y))[2];
     }
 
     add(a: Vec2): Vec2 {
@@ -51,26 +53,31 @@ class Vec2 {
     }
 }
 
-const pointInLinePerpSpace = (ax: number, ay: number, bx: number, by: number, x: number, y: number): boolean => {
-    const perpSlope = (ax-bx)/(by-ay);
+const pointInLinePerpSpace = (ax: number, ay: number, bx: number, by: number, px: number, py: number): boolean => {
+    let _ax:number, _ay:number, _bx:number, _by:number, _cx:number, _cy:number;
+    let perpSlope = (ax-bx) / (by-ay);
 
     if (perpSlope > 1) {
-        const oax = ax, obx = bx, ox = x;
-        ax =  ay; bx =  by; x =  y;
-        ay = oax; by = obx; y = ox;
+        _ax = ay; _bx = by; _cx = py;
+        _ay = ax; _by = bx; _cy = px;
+        perpSlope = (_ax-_bx)/(_by-_ay);
+    } else {
+        _ax = ax; _bx = bx; _cx = px;
+        _ay = ay; _by = by; _cy = py;
     }
 
     let yMin: number, yMax: number;
-    if (ay > by) {
-        yMin = perpSlope*(x - bx) + by;
-        yMax = perpSlope*(x - ax) + ay;
+
+    if (_ay > _by) {
+        yMin = perpSlope*(_cx - _bx) + _by;
+        yMax = perpSlope*(_cx - _ax) + _ay;
     } else {
-        yMin = perpSlope*(x - ax) + ay;
-        yMax = perpSlope*(x - bx) + by;
+        yMin = perpSlope*(_cx - _ax) + _ay;
+        yMax = perpSlope*(_cx - _bx) + _by;
     }
 
-    return y > yMin && y < yMax;
-};
+    return _cy > yMin && _cy < yMax;
+}
 
 const projectPointOnLine = (m: number, x: number, y: number): Vec2 => {
     if (Math.abs(m) < 1e-9) {
@@ -84,18 +91,20 @@ const projectPointOnLine = (m: number, x: number, y: number): Vec2 => {
 };
 
 
-const circleCollisionStep = (lines: vec2[], x :number, y :number, r :number) :CollisionResult | null => {
+export const circleCollision = (lines: vec2[], x :number, y :number, r :number) :CollisionResult | null => {
     const r2 = r*r;
 
     let lined = false;
+    let lineA: vec2 | null = null;
+    let lineB: vec2 | null = null;
     let normal: Vec2 | null = null;
     let restore: Vec2 | null = null;
 
-    for (let i = 0; i < lines.length - 1; i++) {
+    for (let i = 0; i < lines.length; i++) {
         const ax = lines[i][0];
         const ay = lines[i][1];
-        const bx = lines[i+1][0];
-        const by = lines[i+1][1];
+        const bx = lines[(i+1) % lines.length][0];
+        const by = lines[(i+1) % lines.length][1];
 
         if (pointInLinePerpSpace (ax, ay, bx, by, x, y)) {
             const m  = (by-ay)/(bx-ax);
@@ -117,6 +126,9 @@ const circleCollisionStep = (lines: vec2[], x :number, y :number, r :number) :Co
                     .add(pointOnLine)
                     .add(normal.clone().scale(r));
 
+                lineA = lines[i];
+                lineB = lines[i+1];
+
                 x = restore.x;
                 y = restore.y;
                 lined = true;
@@ -127,47 +139,22 @@ const circleCollisionStep = (lines: vec2[], x :number, y :number, r :number) :Co
     if (lined) return {
         normal: normal!.getRaw(),
         restore: restore!.getRaw(),
+        lineA: lineA!, 
+        lineB: lineB!
     };
 
-    for (let i = 0; i < lines.length - 1; i++) {
+    for (let i = 0; i < lines.length; i++) {
         const delta = new Vec2 (x - lines[i][0], y - lines[i][1]);
         if (delta.magnitude2() < r2) {
             const norm = delta.normalize();
             return {
                 normal: norm.getRaw(),
-                restore: (new Vec2 (lines[i][0],lines[i][1])).add(norm.clone().scale(r)).getRaw()
+                restore: (new Vec2 (lines[i][0],lines[i][1])).add(norm.clone().scale(r)).getRaw(),
+                lineA: lines[i],
+                lineB: lines[i]
             };
         }
     }
 
     return null;
 };
-
-export const circleCollision = (lines: vec2[], x0: number,y0: number,x1: number,y1: number,r: number): CollisionResult | null => {
-    const r2 = r * r;
-    let dx = x1 - x0;
-    let dy = y1 - y0;
-    const d2 = dx*dx + dy*dy;
-
-    let col = circleCollisionStep(lines,x1,y1,r);
-    if (col) return col;
-    if (d2 < r2) return null;
-
-    const dist = Math.sqrt (d2);
-    const stepx = r * (dx / dist);
-    const stepy = r * (dy / dist);
-
-    do {
-        x0 += stepx;
-        y0 += stepy;
-
-        col = circleCollisionStep(lines,x0,y0,r);
-        if (col) return col;
-
-        dx = x1 - x0;
-        dy = y1 - y0;
-    }
-    while (dx*dx + dy*dy >= r2);
-
-    return circleCollisionStep(lines,x1,y1,r);
-}

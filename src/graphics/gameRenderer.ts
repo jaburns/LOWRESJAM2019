@@ -4,16 +4,20 @@ import { drawCave, CaveTextures } from "graphics/caveRenderer";
 import { FrameBufferTexture } from "./frameBufferTexture";
 import { getShaders } from "shaders";
 import { drawBuffer } from "./bufferRenderer";
+import { loadTexture } from "./loadTexture";
 
 const MAP_SIZE = 512;
+
+type TexturePack = {[name: string]: WebGLTexture};
 
 export class GameRenderer {
     private readonly gl: WebGLRenderingContext;
     private readonly caveTextures: CaveTextures;
     private readonly screenBuffer: FrameBufferTexture;
     private readonly backgroundTex: WebGLTexture;
+    private texturePack: TexturePack | null = null;
 
-    constructor(canvas: HTMLCanvasElement, cave: Cave) {
+    constructor(canvas: HTMLCanvasElement, cave: Cave, texturePaths: string[]) {
         const gl = canvas.getContext('webgl')!;
         this.gl = gl;
 
@@ -24,6 +28,8 @@ export class GameRenderer {
         this.caveTextures = drawCave(gl, cave, MAP_SIZE);
         this.screenBuffer = new FrameBufferTexture(gl, 64, 64, 'nearest');
         this.backgroundTex = this.makeBackgroundTex();
+
+        this.loadTexturePackAsync(texturePaths);
     }
 
     private makeBackgroundTex(): WebGLTexture {
@@ -38,8 +44,33 @@ export class GameRenderer {
         return frameBuffer.releaseTexture();
     };
 
+    private loadTexturePackAsync(paths: string[]) {
+        Promise.all(
+            paths.map(path => loadTexture(this.gl, path, 'nearest'))
+        )
+        .then(textures => {
+            this.texturePack = {};
+
+            for (let i = 0; i < paths.length; ++i) {
+                this.texturePack[paths[i].substr(0, paths[i].indexOf('.'))] = textures[i];
+            }
+        });
+    }
+
     draw(state: GameState, monotonicTime: number) {
         const gl = this.gl;
+
+        if (this.texturePack === null) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            return;
+        }
+
+        const fireLevel = state.shipFiring ? .8 + .2*Math.random() : 0;
+        const firePattern = state.shipFiring
+            ? [ Math.random(), Math.random(), Math.random(), Math.random() ]
+            : [ 0, 0, 0, 0 ];
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.screenBuffer.framebuffer);
         gl.viewport(0, 0, 64, 64);
@@ -55,9 +86,16 @@ export class GameRenderer {
             gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
             gl.uniform2fv(gl.getUniformLocation(shader, "u_camera"), state.playerPos);
             gl.uniform1f(gl.getUniformLocation(shader, "u_time"), monotonicTime);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_fireLevel"), fireLevel);
         });
 
-        drawBuffer(gl, getShaders(gl).ship, null, shader => { });
+        drawBuffer(gl, getShaders(gl).ship, null, shader => {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['ship']);
+            gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_angle"), state.playerRads);
+            gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), firePattern);
+        });
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
@@ -68,6 +106,7 @@ export class GameRenderer {
             gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
             gl.uniform2fv(gl.getUniformLocation(shader, "u_camera"), state.playerPos);
             gl.uniform1f(gl.getUniformLocation(shader, "u_time"), monotonicTime);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_fireLevel"), fireLevel);
         });
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
