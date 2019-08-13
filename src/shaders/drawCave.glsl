@@ -1,11 +1,14 @@
 precision highp float;
 
 uniform sampler2D u_tex;
-uniform float u_caveRes;
+uniform float u_texRes;
 uniform float u_screenRes;
-uniform vec2 u_camera;
-uniform float u_time;
-uniform float u_fireLevel;
+uniform vec2 u_cameraPos;
+uniform vec2 u_lightPos;
+
+uniform float u_distScale;
+uniform float u_surfaceDepth;
+uniform float u_brightness;
 
 varying vec2 v_uv;
 
@@ -22,26 +25,24 @@ varying vec2 v_uv;
 #endif
 #ifdef FRAGMENT
 
+    vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position)
+    {
+        vec3 fromLight = vec3(u_distScale*(lookupUV - (.5*position+.5)), u_surfaceDepth);
+        vec3 dir = normalize(fromLight);
+        float len = length(fromLight);
+
+        float falloff = pow((len / brightness + 1.0), -2.0);
+        float intensity = dot(dir, 2.0*normal-1.0);
+
+        return color * intensity * falloff;
+    }
+
     void main()
     {
-        vec2 camera = .5*u_camera+.5;
-
-        vec2 lookupUV = (v_uv - .5) * u_screenRes / u_caveRes + camera;
+        vec2 lookupUV = (v_uv - 0.5) * u_screenRes / u_texRes + (.5*u_cameraPos+.5);
         vec4 normalMapLookup = texture2D(u_tex, lookupUV);
 
-        vec2 fromCam = lookupUV - camera;
-        float dist = length(fromCam) / 1.5;
-        vec2 dir = normalize(fromCam);
-
-        float radialAmount = clamp(1.2*(1. - dist*2.*u_caveRes/u_screenRes), 0.4, 1.);
-        float angleAmount = dot(dir, 2.*normalMapLookup.xy-1.);
-        vec3 colorA = vec3(1,1,1) * angleAmount * radialAmount * radialAmount;
-
-        float radialAmountB = clamp(1.*(1. - dist*4.*u_caveRes/u_screenRes), 0.1, 1.);
-        float angleAmountB = dot(dir, 2.*normalMapLookup.xy-1.);
-        vec3 colorB = vec3(1,0,0) * angleAmountB * radialAmountB * radialAmountB;
-
-        vec3 color = .4*colorA + u_fireLevel*colorB;
+        vec3 color = pointLight(lookupUV, normalMapLookup.xyz, vec3(1,1,1), u_brightness, u_lightPos);
 
         gl_FragColor = vec4(color, normalMapLookup.a);
     }

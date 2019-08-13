@@ -1,7 +1,6 @@
 //foreach_shader import * as $ from './$.glsl';
 import * as bufferCopy from './bufferCopy.glsl';//_generated
 import * as bufferCopyScale from './bufferCopyScale.glsl';//_generated
-import * as drawBackground from './drawBackground.glsl';//_generated
 import * as drawCave from './drawCave.glsl';//_generated
 import * as drawCaveMap from './drawCaveMap.glsl';//_generated
 import * as drawRockTexture from './drawRockTexture.glsl';//_generated
@@ -14,7 +13,6 @@ type ShaderCollection = {
     //foreach_shader readonly $: WebGLShader,
     readonly bufferCopy: WebGLShader,//_generated
     readonly bufferCopyScale: WebGLShader,//_generated
-    readonly drawBackground: WebGLShader,//_generated
     readonly drawCave: WebGLShader,//_generated
     readonly drawCaveMap: WebGLShader,//_generated
     readonly drawRockTexture: WebGLShader,//_generated
@@ -28,7 +26,6 @@ const buildCollection = (gl: WebGLRenderingContext): ShaderCollection => ({
     //foreach_shader $: compileShader(gl, '$', $.default),
     bufferCopy: compileShader(gl, 'bufferCopy', bufferCopy.default),//_generated
     bufferCopyScale: compileShader(gl, 'bufferCopyScale', bufferCopyScale.default),//_generated
-    drawBackground: compileShader(gl, 'drawBackground', drawBackground.default),//_generated
     drawCave: compileShader(gl, 'drawCave', drawCave.default),//_generated
     drawCaveMap: compileShader(gl, 'drawCaveMap', drawCaveMap.default),//_generated
     drawRockTexture: compileShader(gl, 'drawRockTexture', drawRockTexture.default),//_generated
