@@ -4,6 +4,9 @@ uniform sampler2D u_tex;
 uniform float u_angle;
 uniform vec4 u_fire;
 
+uniform vec2 u_cameraPos;
+uniform vec2 u_spritePos;
+
 varying vec2 v_uv;
 
 #ifdef VERTEX
@@ -62,7 +65,7 @@ varying vec2 v_uv;
 
     void main()
     {
-        vec2 px = floor(v_uv * 64.);
+        vec2 px = floor((v_uv + 4.*(u_cameraPos - u_spritePos)) * 64.);
         if (px.x > 27.5 && px.x < 35.5 && px.y > 27.5 && px.y < 35.5) {
             gl_FragColor = sprite((px - 28.) / 8.);
         } else {

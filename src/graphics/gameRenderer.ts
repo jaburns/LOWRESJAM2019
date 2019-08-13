@@ -99,6 +99,8 @@ export class GameRenderer {
             gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
             gl.uniform1f(gl.getUniformLocation(shader, "u_angle"), state.playerRads);
             gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), firePattern);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), state.playerPos);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), lightPos);
         });
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
