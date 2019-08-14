@@ -8,9 +8,11 @@ uniform vec2 u_cameraPos;
 uniform vec2 u_lightPos;
 
 uniform float u_distScale;
-uniform float u_distScale2; // TODO rename and use
+uniform float u_parallax; // TODO rename and use
 uniform float u_surfaceDepth;
 uniform float u_brightness;
+
+uniform float u_fire;
 
 varying vec2 v_uv;
 
@@ -44,7 +46,9 @@ varying vec2 v_uv;
         vec2 lookupUV = (v_uv - 0.5) * u_screenRes / u_texRes + (.5*u_cameraPos+.5);
         vec4 normalMapLookup = texture2D(u_tex, u_uvScale * lookupUV);
 
-        vec3 color = pointLight(lookupUV, normalMapLookup.xyz, vec3(1,1,1), u_brightness, u_lightPos);
+        vec2 lightPos = (u_lightPos - u_cameraPos) * u_parallax + u_cameraPos;
+
+        vec3 color = pointLight(lookupUV, normalMapLookup.xyz, vec3(1. + .5*u_fire,1,1), u_brightness, lightPos);
 
         gl_FragColor = vec4(color, normalMapLookup.a);
     }

@@ -78,7 +78,7 @@ export const GameState = {
                 let tangVelLen = vec2.dot(state.playerVel, tangent);
 
                 normVelLen *= -.5;
-                //tangVelLen *= .9;
+                tangVelLen *= .9;
 
                 const v0 = vec2.clone(col.normal);
                 const v1 = vec2.clone(tangent);
