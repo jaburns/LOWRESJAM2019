@@ -1,12 +1,14 @@
 precision highp float;
 
 uniform sampler2D u_tex;
+uniform float u_uvScale;
 uniform float u_texRes;
 uniform float u_screenRes;
 uniform vec2 u_cameraPos;
 uniform vec2 u_lightPos;
 
 uniform float u_distScale;
+uniform float u_distScale2; // TODO rename and use
 uniform float u_surfaceDepth;
 uniform float u_brightness;
 
@@ -40,7 +42,7 @@ varying vec2 v_uv;
     void main()
     {
         vec2 lookupUV = (v_uv - 0.5) * u_screenRes / u_texRes + (.5*u_cameraPos+.5);
-        vec4 normalMapLookup = texture2D(u_tex, lookupUV);
+        vec4 normalMapLookup = texture2D(u_tex, u_uvScale * lookupUV);
 
         vec3 color = pointLight(lookupUV, normalMapLookup.xyz, vec3(1,1,1), u_brightness, u_lightPos);
 

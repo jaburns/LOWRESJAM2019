@@ -5,8 +5,10 @@ import { FrameBufferTexture } from "./frameBufferTexture";
 import { getShaders } from "shaders";
 import { drawBuffer } from "./bufferRenderer";
 import { loadTexture } from "./loadTexture";
+import { vec2 } from "gl-matrix";
 
 const MAP_SIZE = 512;
+const BG_SIZE = 512;
 
 type TexturePack = {[name: string]: WebGLTexture};
 
@@ -35,11 +37,11 @@ export class GameRenderer {
     private makeBackgroundTex(): WebGLTexture {
         const gl = this.gl;
 
-        const frameBuffer = new FrameBufferTexture(gl, 128, 128, 'linear');
+        const frameBuffer = new FrameBufferTexture(gl, BG_SIZE, BG_SIZE, 'linear');
         gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer.framebuffer);
-        gl.viewport(0, 0, 128, 128);
+        gl.viewport(0, 0, BG_SIZE, BG_SIZE);
 
-        drawBuffer(gl, getShaders(gl).bufferCopyScale, this.caveTextures.bg);
+        drawBuffer(gl, getShaders(gl).bufferCopy, this.caveTextures.bg);
         
         return frameBuffer.releaseTexture();
     };
@@ -77,7 +79,10 @@ export class GameRenderer {
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        const lightPos = [state.playerPos[0] + 0.1*Math.sin(monotonicTime), state.playerPos[1] + 0.1*Math.cos(monotonicTime)];
+        const cameraShakeVal = Math.random();
+        const cameraPos = vec2.clone(state.cameraPos);
+        cameraPos[0] += state.cameraShake[0] * cameraShakeVal;
+        cameraPos[1] += state.cameraShake[1] * cameraShakeVal;
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
@@ -85,10 +90,12 @@ export class GameRenderer {
             gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
 
             gl.uniform1f(gl.getUniformLocation(shader, "u_texRes"), 128);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_uvScale"), .3);
             gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), state.playerPos);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), lightPos);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), state.playerPos);
             gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 1);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_distScale2"), 4);
             gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), 0.05);
             gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), 0.1);
         });
@@ -99,8 +106,8 @@ export class GameRenderer {
             gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
             gl.uniform1f(gl.getUniformLocation(shader, "u_angle"), state.playerRads);
             gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), firePattern);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), state.playerPos);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), lightPos);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), state.playerPos);
         });
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
@@ -109,10 +116,12 @@ export class GameRenderer {
             gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
 
             gl.uniform1f(gl.getUniformLocation(shader, "u_texRes"), MAP_SIZE);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_uvScale"), 1);
             gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), state.playerPos);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), lightPos);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), state.playerPos);
             gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 4);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_distScale2"), 1);
             gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), 0.05);
             gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), 0.1);
         });

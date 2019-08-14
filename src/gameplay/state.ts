@@ -10,6 +10,8 @@ export type GameState = {
     playerPos: vec2,
     playerRads: number,
     playerVel: vec2,
+    cameraPos: vec2,
+    cameraShake: vec2,
     latestCollisions: {a:vec2, b:vec2, t:number}[],
 };
 
@@ -20,6 +22,8 @@ export const GameState = {
         playerPos: vec2.fromValues( 0, 0 ),
         playerRads: -Math.PI / 2, 
         playerVel: vec2.fromValues( 0, 0 ),
+        cameraPos: vec2.fromValues( 0, 0 ),
+        cameraShake: vec2.fromValues( 0, 0 ),
         latestCollisions: [],
     }),
 
@@ -30,6 +34,8 @@ export const GameState = {
             playerPos: vec2.clone(prevState.playerPos as any), 
             playerRads: inputs.mouseRads,
             playerVel: vec2.clone(prevState.playerVel as any),
+            cameraPos: vec2.clone(prevState.cameraPos as any),
+            cameraShake: vec2.clone(prevState.cameraShake as any), 
             latestCollisions: prevState.latestCollisions
                 .map(({a, b, t}) => ({ a: vec2.clone(a as any), b: vec2.clone(b as any), t: t-0.05 }))
                 .filter(v => v.t >= 0),
@@ -43,6 +49,15 @@ export const GameState = {
         }
 
         vec2.add(state.playerPos, state.playerPos, state.playerVel);
+
+        vec2.scale(state.cameraShake, state.cameraShake, 0.87);
+
+        const targetCameraPos = vec2.clone(state.playerVel);
+        vec2.scale(targetCameraPos, targetCameraPos, 20);
+        vec2.add(targetCameraPos, targetCameraPos, state.playerPos);
+
+        state.cameraPos[0] += (targetCameraPos[0] - state.cameraPos[0]) / 10;
+        state.cameraPos[1] += (targetCameraPos[1] - state.cameraPos[1]) / 10;
 
         state.cave.edges.forEach(blob => {
             const col = circleCollision(blob, state.playerPos[0], state.playerPos[1], 3 / 256);
@@ -74,8 +89,14 @@ export const GameState = {
                 const X = vec2.fromValues(1, 0);
                 const Y = vec2.fromValues(0, 1); 
 
-                state.playerVel[0] = vec2.dot(normVel, X) + vec2.dot(tangVel, X);
-                state.playerVel[1] = vec2.dot(normVel, Y) + vec2.dot(tangVel, Y);
+                const newVX = vec2.dot(normVel, X) + vec2.dot(tangVel, X);
+                const newVY = vec2.dot(normVel, Y) + vec2.dot(tangVel, Y);
+
+                state.cameraShake[0] = 4 * (newVX - state.playerVel[0]);
+                state.cameraShake[1] = 4 * (newVY - state.playerVel[1]);
+
+                state.playerVel[0] = newVX;
+                state.playerVel[1] = newVY;
             }
         });
 
