@@ -6,6 +6,7 @@ import { getShaders } from "shaders";
 import { drawBuffer } from "./bufferRenderer";
 import { loadTexture } from "./loadTexture";
 import { vec2 } from "gl-matrix";
+import { magic } from "gameplay/magic";
 
 const MAP_SIZE = 512;
 const BG_SIZE = 512;
@@ -59,7 +60,7 @@ export class GameRenderer {
         });
     }
 
-    draw(state: GameState, monotonicTime: number) {
+    draw(state: GameState) {
         const gl = this.gl;
 
         if (this.texturePack === null) {
@@ -69,9 +70,9 @@ export class GameRenderer {
             return;
         }
 
-        const fireLevel = state.shipFiring ? Math.random() : 0;
+        const fireLevel = state.shipFiring ? state.rolls[0] : 0;
         const firePattern = state.shipFiring
-            ? [ Math.random(), Math.random(), Math.random(), Math.random() ]
+            ? state.rolls.slice(1, 5)
             : [ 0, 0, 0, 0 ];
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.screenBuffer.framebuffer);
@@ -79,7 +80,8 @@ export class GameRenderer {
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        const cameraShakeVal = Math.random();
+        console.log(state.cameraShakeT);
+        const cameraShakeVal = 0.5*Math.cos(Math.PI*state.cameraShakeT)*Math.exp(-0.15*state.cameraShakeT);
         const cameraPos = vec2.clone(state.cameraPos);
         cameraPos[0] += state.cameraShake[0] * cameraShakeVal;
         cameraPos[1] += state.cameraShake[1] * cameraShakeVal;
@@ -95,9 +97,9 @@ export class GameRenderer {
             gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
             gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), state.playerPos);
             gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 1);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_parallax"), 2);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), 0.05);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), 0.1);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_parallax"), magic.bgParallax);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), magic.bgSurfaceDepth);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), magic.bgBrightness);
             gl.uniform1f(gl.getUniformLocation(shader, "u_fire"), fireLevel);
         });
 
@@ -123,8 +125,8 @@ export class GameRenderer {
             gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), state.playerPos);
             gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 4);
             gl.uniform1f(gl.getUniformLocation(shader, "u_parallax"), 1);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), 0.05);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), 0.1);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), magic.caveSurfaceDepth);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), magic.caveBrightness);
             gl.uniform1f(gl.getUniformLocation(shader, "u_fire"), fireLevel);
         });
 

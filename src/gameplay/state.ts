@@ -6,36 +6,45 @@ import { Cave } from "caveGenerator";
 
 export type GameState = {
     cave: Cave,
+    time: number,
     shipFiring: boolean,
     playerPos: vec2,
     playerRads: number,
     playerVel: vec2,
     cameraPos: vec2,
     cameraShake: vec2,
+    cameraShakeT: number,
+    rolls: number[],
     latestCollisions: {a:vec2, b:vec2, t:number}[],
 };
 
 export const GameState = {
     create: (cave: Cave): GameState => ({
         cave,
+        time: 0,
         shipFiring: false,
         playerPos: vec2.fromValues( 0, 0 ),
         playerRads: -Math.PI / 2, 
         playerVel: vec2.fromValues( 0, 0 ),
         cameraPos: vec2.fromValues( 0, 0 ),
         cameraShake: vec2.fromValues( 0, 0 ),
+        cameraShakeT: 0,
+        rolls: [0,0,0,0,0],
         latestCollisions: [],
     }),
 
     step: (prevState: Const<GameState>, inputs: InputState): GameState => {
         const state: GameState = {
             cave: prevState.cave as any,
+            time: prevState.time + 1,
             shipFiring: inputs.mouseDown,
             playerPos: vec2.clone(prevState.playerPos as any), 
             playerRads: inputs.mouseRads,
             playerVel: vec2.clone(prevState.playerVel as any),
             cameraPos: vec2.clone(prevState.cameraPos as any),
             cameraShake: vec2.clone(prevState.cameraShake as any), 
+            cameraShakeT: prevState.cameraShakeT + 1,
+            rolls: [Math.random(), Math.random(), Math.random(), Math.random(), Math.random()],
             latestCollisions: prevState.latestCollisions
                 .map(({a, b, t}) => ({ a: vec2.clone(a as any), b: vec2.clone(b as any), t: t-0.05 }))
                 .filter(v => v.t >= 0),
@@ -92,6 +101,7 @@ export const GameState = {
                 const newVX = vec2.dot(normVel, X) + vec2.dot(tangVel, X);
                 const newVY = vec2.dot(normVel, Y) + vec2.dot(tangVel, Y);
 
+                state.cameraShakeT = 0;
                 state.cameraShake[0] = 4 * (newVX - state.playerVel[0]);
                 state.cameraShake[1] = 4 * (newVY - state.playerVel[1]);
 

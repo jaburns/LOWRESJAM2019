@@ -9,7 +9,7 @@ export class BasicGameRenderer {
         this.ctx = canvas.getContext('2d')!;
     }
 
-    draw(state: GameState, monotonicTime: number) {
+    draw(state: GameState) {
         const ctx = this.ctx;
 
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
