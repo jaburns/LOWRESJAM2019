@@ -6,7 +6,7 @@ import * as drawRockTexture from './drawRockTexture.glsl';//_generated
 import * as flatWhite from './flatWhite.glsl';//_generated
 import * as gaussianBlur from './gaussianBlur.glsl';//_generated
 import * as normals from './normals.glsl';//_generated
-import * as ship from './ship.glsl';//_generated
+import * as sprite from './sprite.glsl';//_generated
 
 type ShaderCollection = {
     //foreach_shader readonly $: WebGLShader,
@@ -17,7 +17,7 @@ type ShaderCollection = {
     readonly flatWhite: WebGLShader,//_generated
     readonly gaussianBlur: WebGLShader,//_generated
     readonly normals: WebGLShader,//_generated
-    readonly ship: WebGLShader,//_generated
+    readonly sprite: WebGLShader,//_generated
 };
 
 const buildCollection = (gl: WebGLRenderingContext): ShaderCollection => ({
@@ -29,7 +29,7 @@ const buildCollection = (gl: WebGLRenderingContext): ShaderCollection => ({
     flatWhite: compileShader(gl, 'flatWhite', flatWhite.default),//_generated
     gaussianBlur: compileShader(gl, 'gaussianBlur', gaussianBlur.default),//_generated
     normals: compileShader(gl, 'normals', normals.default),//_generated
-    ship: compileShader(gl, 'ship', ship.default),//_generated
+    sprite: compileShader(gl, 'sprite', sprite.default),//_generated
 });
 
 const compiledShaders: { [canvasId: string]: ShaderCollection } = {};

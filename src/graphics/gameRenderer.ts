@@ -1,4 +1,4 @@
-import { GameState } from "gameplay/state";
+import { GameState, getLightsForGameState, Light } from "gameplay/state";
 import { Cave } from "caveGenerator";
 import { drawCave, CaveTextures } from "graphics/caveRenderer";
 import { FrameBufferTexture } from "./frameBufferTexture";
@@ -12,6 +12,30 @@ const MAP_SIZE = 512;
 const BG_SIZE = 512;
 
 type TexturePack = {[name: string]: WebGLTexture};
+
+const getSpriteLookupForShipAngle = (angle: number): vec2 => {
+    const result = vec2.create();
+    const aa = Math.abs(angle);
+
+    if      (aa <    3.14159 / 8) result[0] = 0;
+    else if (aa < 3.*3.14159 / 8) result[0] = 1;
+    else if (aa < 5.*3.14159 / 8) result[0] = 2;
+    else if (aa < 7.*3.14159 / 8) result[0] = 3;
+    else result[0] = 4;
+
+    result[1] = angle > 0 ? 1 : 0;
+
+    return result;
+};
+
+const bindLightInfo = (gl: WebGLRenderingContext, shader: WebGLShader, cameraPos: vec2, allLights: Light[]) => {
+    gl.uniform4fv(gl.getUniformLocation(shader, "u_lightInfo"), [
+        allLights[0].pos[0],
+        allLights[0].pos[1],
+        allLights[0].depth,
+        allLights[0].brightness + allLights[0].colorIndex,
+    ]);
+};
 
 export class GameRenderer {
     private readonly gl: WebGLRenderingContext;
@@ -80,11 +104,12 @@ export class GameRenderer {
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        console.log(state.cameraShakeT);
         const cameraShakeVal = 0.5*Math.cos(Math.PI*state.cameraShakeT)*Math.exp(-0.15*state.cameraShakeT);
         const cameraPos = vec2.clone(state.cameraPos);
         cameraPos[0] += state.cameraShake[0] * cameraShakeVal;
         cameraPos[1] += state.cameraShake[1] * cameraShakeVal;
+
+        const lights = getLightsForGameState(state);
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
@@ -93,24 +118,36 @@ export class GameRenderer {
 
             gl.uniform1f(gl.getUniformLocation(shader, "u_texRes"), 128);
             gl.uniform1f(gl.getUniformLocation(shader, "u_uvScale"), .3);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
             gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), state.playerPos);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 1);
             gl.uniform1f(gl.getUniformLocation(shader, "u_parallax"), magic.bgParallax);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_fire"), fireLevel);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 1);
+
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), state.playerPos);
             gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), magic.bgSurfaceDepth);
             gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), magic.bgBrightness);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_fire"), fireLevel);
+
+            gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.bgSurfaceDepth);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_brightnessMultiplier"), magic.bgBrightness);
+            bindLightInfo(gl, shader, state.cameraPos, lights);
         });
 
-        drawBuffer(gl, getShaders(gl).ship, null, shader => {
+        drawBuffer(gl, getShaders(gl).sprite, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['ship']);
             gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_angle"), state.playerRads);
+
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['normals']);
+            gl.uniform1i(gl.getUniformLocation(shader, "u_normMap"), 1);
+
+            gl.uniform2fv(gl.getUniformLocation(shader, "u_spriteLookup"), getSpriteLookupForShipAngle(state.playerRads));
             gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), firePattern);
             gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
             gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), state.playerPos);
+
+            gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
+            bindLightInfo(gl, shader, state.cameraPos, lights);
         });
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
@@ -120,14 +157,14 @@ export class GameRenderer {
 
             gl.uniform1f(gl.getUniformLocation(shader, "u_texRes"), MAP_SIZE);
             gl.uniform1f(gl.getUniformLocation(shader, "u_uvScale"), 1);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_screenRes"), 64);
             gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_lightPos"), state.playerPos);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 4);
             gl.uniform1f(gl.getUniformLocation(shader, "u_parallax"), 1);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), magic.caveSurfaceDepth);
-            gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), magic.caveBrightness);
             gl.uniform1f(gl.getUniformLocation(shader, "u_fire"), fireLevel);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 4);
+
+            gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
+            gl.uniform1f(gl.getUniformLocation(shader, "u_brightnessMultiplier"), 1);
+            bindLightInfo(gl, shader, state.cameraPos, lights);
         });
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);

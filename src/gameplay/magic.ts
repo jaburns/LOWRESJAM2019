@@ -21,6 +21,6 @@ export const magicRange: Magic<NumberRange> = {
 
 export let magic: Magic<number> =
 
-{bgParallax:2.05,bgSurfaceDepth:0.09,bgBrightness:0.1,caveSurfaceDepth:0.07,caveBrightness:0.17}
+{bgParallax:2.05,bgSurfaceDepth:0.09,bgBrightness:0.58,caveSurfaceDepth:0.07,caveBrightness:0.17}
 
 ;

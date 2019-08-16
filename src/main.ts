@@ -8,7 +8,8 @@ import { magicRange, magic } from "gameplay/magic";
 const REWIND_COUNT = 300;
 const FRAME_SECONDS = 1 / 60;
 const TEXTURES = [
-    'ship.png'
+    'ship.png',
+    'normals.png',
 ];
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;

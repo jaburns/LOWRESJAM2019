@@ -3,6 +3,14 @@ import { Const } from "utils/lang";
 import { InputState } from "./inputs";
 import { circleCollision } from "./collision";
 import { Cave } from "caveGenerator";
+import { magic } from "./magic";
+
+export type Light = {
+    pos: vec2,
+    depth: number,
+    brightness: number,
+    colorIndex: number,
+};
 
 export type GameState = {
     cave: Cave,
@@ -16,6 +24,18 @@ export type GameState = {
     cameraShakeT: number,
     rolls: number[],
     latestCollisions: {a:vec2, b:vec2, t:number}[],
+};
+
+export const getLightsForGameState = (state: GameState): Light[] => {
+    return [{
+        pos: vec2.fromValues(
+            state.playerPos[0] + 0.05 * Math.sin(state.time/60),
+            state.playerPos[1],
+        ),
+        depth: 0,
+        brightness: magic.caveBrightness,
+        colorIndex: 0
+    }];
 };
 
 export const GameState = {
