@@ -9,7 +9,9 @@ uniform vec2 u_cameraPos;
 uniform vec2 u_spritePos;
 
 uniform float u_baseLightDistance;
-uniform vec4 u_lightInfo;
+
+uniform vec4 u_lightInfo0;
+uniform vec4 u_lightInfo1;
 
 varying vec2 v_uv;
 
@@ -33,9 +35,15 @@ varying vec2 v_uv;
 #endif
 #ifdef FRAGMENT
 
-    vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position)
+    vec3 colorForIndex(float index)
     {
-        vec3 fromLight = vec3(u_distScale*(lookupUV - (.5*position+.5)), (u_baseLightDistance + u_lightInfo.z));
+        if (index < 0.5) return vec3(1,1,1);
+        if (index < 1.5) return vec3(1,0,0);
+    }
+
+    vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position, float depth)
+    {
+        vec3 fromLight = vec3(u_distScale*(lookupUV - (.5*position+.5)), depth);
         vec3 dir = normalize(fromLight);
         float len = length(fromLight);
 
@@ -45,16 +53,24 @@ varying vec2 v_uv;
         return color * intensity * falloff;
     }
 
-    vec4 spritePointLight(vec2 vuv, vec3 normie)
+    vec4 spritePointLight(vec2 vuv, vec3 normie, vec4 lightInfo)
     {
         vec2 lookupUV = (v_uv - 0.5) * SCREEN_RES / 512.0 + (.5*u_cameraPos+.5);
-        vec2 lightPos = (u_lightInfo.xy - u_cameraPos) * 1. + u_cameraPos;
-        vec3 litColor = pointLight(lookupUV, normie, vec3(1,1,1), fract(u_lightInfo.w), lightPos);
+        vec2 lightPos = (lightInfo.xy - u_cameraPos) * 1. + u_cameraPos;
+        vec3 litColor = pointLight(lookupUV, normie, colorForIndex(floor(lightInfo.w)), fract(lightInfo.w), lightPos, clamp(u_baseLightDistance + lightInfo.z,0.,100.));
         return vec4(litColor, 1);
     }
 
-    vec4 sprite(sampler2D map, vec2 uv) 
+    vec4 spriteAllLights(vec2 vuv, vec3 normie)
     {
+        return spritePointLight(vuv, normie, u_lightInfo0)
+            + spritePointLight(vuv, normie, u_lightInfo1);
+    }
+
+    vec4 sprite(sampler2D map, vec2 uv, out bool skip) 
+    {
+        skip = false;
+
         vec4 color = texture2D(map, (uv + u_spriteLookup) * SPRITE_WIDTH / SHEET_WIDTH);
 
         if (u_fire.r > -0.5 && color.a > .99 && color.r > .99 && color.g < .01) {
@@ -65,7 +81,8 @@ varying vec2 v_uv;
             else if (color.b < .75) on = u_fire.b > .5;
             else                    on = u_fire.a > .5;
             
-            color = on ? vec4(1,0,0,1) : vec4(0,0,0,0);
+            color = on ? vec4(1,.7,.7,1) : vec4(0,0,0,0);
+            skip = true;
         }
 
         return color;
@@ -82,17 +99,19 @@ varying vec2 v_uv;
         {
             vec2 spriteUV = (px - ceil(lower)) / SPRITE_WIDTH;
 
-            vec3 normie = sprite(u_normMap, spriteUV).xyz;
-            normie.y = 1.0 - normie.x;
+            bool skip;
 
-            vec4 albedo = sprite(u_tex, spriteUV);
+            vec3 normie = sprite(u_normMap, spriteUV, skip).xyz;
+            normie.x = 1.0 - normie.x;
 
-            if (u_fire.r > -0.5 && albedo.r > .99 && albedo.g < 0.01 && albedo.b < 0.01) {
+            vec4 albedo = sprite(u_tex, spriteUV, skip);
+
+            if (u_fire.r > -0.5 && skip) {
                 gl_FragColor = albedo;
                 return;
             }
 
-            vec4 litColor = spritePointLight(v_uv, normie);
+            vec4 litColor = spriteAllLights(v_uv, normie);
 
             gl_FragColor = albedo * litColor;
             return;

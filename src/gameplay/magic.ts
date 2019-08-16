@@ -8,7 +8,10 @@ type Magic<T> = {
     bgSurfaceDepth:   T, 
     bgBrightness:     T,
     caveSurfaceDepth: T,
-    caveBrightness:   T
+    caveBrightness:   T,
+    fireSurfaceDepth: T,
+    fireBrightness:   T,
+    fireShipDistance: T,
 };
 
 export const magicRange: Magic<NumberRange> = {
@@ -17,10 +20,12 @@ export const magicRange: Magic<NumberRange> = {
     bgBrightness:     { lower: 0, upper: 1 },
     caveSurfaceDepth: { lower: 0, upper: 1 },
     caveBrightness:   { lower: 0, upper: 1 },
+    fireSurfaceDepth: { lower: -1, upper: 1 },
+    fireBrightness:   { lower: 0, upper: 1 },
+    fireShipDistance: {lower: 0, upper: 0.2},
 };
 
 export let magic: Magic<number> =
-
-{bgParallax:2.05,bgSurfaceDepth:0.09,bgBrightness:0.58,caveSurfaceDepth:0.07,caveBrightness:0.17}
+{bgParallax:4,bgSurfaceDepth:0.09,bgBrightness:0.58,caveSurfaceDepth:0.07,caveBrightness:0.17,fireSurfaceDepth:-0.06,fireBrightness:0.09,fireShipDistance:0.018}
 
 ;

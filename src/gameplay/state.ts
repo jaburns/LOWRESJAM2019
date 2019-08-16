@@ -27,14 +27,24 @@ export type GameState = {
 };
 
 export const getLightsForGameState = (state: GameState): Light[] => {
+    const normVel = vec2.normalize(vec2.create(), state.playerVel);
+
     return [{
         pos: vec2.fromValues(
-            state.playerPos[0] + 0.05 * Math.sin(state.time/60),
-            state.playerPos[1],
+            state.playerPos[0],
+            state.playerPos[1]
         ),
         depth: 0,
         brightness: magic.caveBrightness,
         colorIndex: 0
+    },{
+        pos: vec2.fromValues(
+            state.playerPos[0] - magic.fireShipDistance*Math.cos(state.playerRads),
+            state.playerPos[1] - magic.fireShipDistance*Math.sin(state.playerRads),
+        ),
+        depth: magic.fireSurfaceDepth,
+        brightness: state.shipFiring ? magic.fireBrightness : 0,
+        colorIndex: 1
     }];
 };
 

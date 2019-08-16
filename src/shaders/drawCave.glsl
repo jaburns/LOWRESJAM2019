@@ -9,7 +9,9 @@ uniform vec2 u_cameraPos;
 
 uniform float u_baseLightDistance;
 uniform float u_brightnessMultiplier;
-uniform vec4 u_lightInfo;
+
+uniform vec4 u_lightInfo0;
+uniform vec4 u_lightInfo1;
 
 varying vec2 v_uv;
 
@@ -28,9 +30,15 @@ varying vec2 v_uv;
 #endif
 #ifdef FRAGMENT
 
-    vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position)
+    vec3 colorForIndex(float index)
     {
-        vec3 fromLight = vec3(u_distScale*(lookupUV - (.5*position+.5)), (u_baseLightDistance + u_lightInfo.z));
+        if (index < 0.5) return vec3(1,1,1);
+        if (index < 1.5) return vec3(1,0,0);
+    }
+
+    vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position, float depth)
+    {
+        vec3 fromLight = vec3(u_distScale*(lookupUV - (.5*position+.5)), depth);
         vec3 dir = normalize(fromLight);
         float len = length(fromLight);
 
@@ -40,18 +48,24 @@ varying vec2 v_uv;
         return color * intensity * falloff;
     }
 
-    vec4 cavePointLight(vec2 lookupUV, vec2 vuv, vec3 normie)
+    vec4 cavePointLight(vec2 lookupUV, vec2 vuv, vec3 normie, vec4 lightInfo)
     {
-        vec2 lightPos = (u_lightInfo.xy - u_cameraPos) * u_parallax + u_cameraPos;
-        vec3 litColor = pointLight(lookupUV, normie, vec3(1,1,1), u_brightnessMultiplier*fract(u_lightInfo.w), lightPos);
+        vec2 lightPos = (lightInfo.xy - u_cameraPos) * u_parallax + u_cameraPos;
+        vec3 litColor = pointLight(lookupUV, normie, colorForIndex(floor(lightInfo.w)), u_brightnessMultiplier*fract(lightInfo.w), lightPos, clamp(u_baseLightDistance + lightInfo.z,0.,100.));
         return vec4(litColor, 1);
+    }
+
+    vec4 caveAllLights(vec2 lookupUV, vec2 vuv, vec3 normie)
+    {
+        return cavePointLight(lookupUV, vuv, normie, u_lightInfo0)
+            + cavePointLight(lookupUV, vuv, normie, u_lightInfo1);
     }
 
     void main()
     {
         vec2 lookupUV = (v_uv - 0.5) * SCREEN_RES / u_texRes + (.5*u_cameraPos+.5);
         vec4 normalMapLookup = texture2D(u_tex, u_uvScale * lookupUV);
-        gl_FragColor = vec4(cavePointLight(lookupUV, v_uv, normalMapLookup.xyz).xyz, normalMapLookup.a);
+        gl_FragColor = vec4(caveAllLights(lookupUV, v_uv, normalMapLookup.xyz).xyz, normalMapLookup.a);
     }
 
 #endif

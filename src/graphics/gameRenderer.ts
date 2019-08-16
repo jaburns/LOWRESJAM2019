@@ -29,12 +29,14 @@ const getSpriteLookupForShipAngle = (angle: number): vec2 => {
 };
 
 const bindLightInfo = (gl: WebGLRenderingContext, shader: WebGLShader, cameraPos: vec2, allLights: Light[]) => {
-    gl.uniform4fv(gl.getUniformLocation(shader, "u_lightInfo"), [
-        allLights[0].pos[0],
-        allLights[0].pos[1],
-        allLights[0].depth,
-        allLights[0].brightness + allLights[0].colorIndex,
-    ]);
+    for (let i = 0; i < allLights.length; ++i) {
+        gl.uniform4fv(gl.getUniformLocation(shader, "u_lightInfo" + i), [
+            allLights[i].pos[0],
+            allLights[i].pos[1],
+            allLights[i].depth,
+            allLights[i].brightness + allLights[i].colorIndex,
+        ]);
+    }
 };
 
 export class GameRenderer {
