@@ -58,6 +58,8 @@ varying vec2 v_uv;
         if (index < 2.5) return vec3(.5,1,1);  // dude lamp
         if (index < 3.5) return vec3(1,0,0);  // door red lamp
         if (index < 4.5) return vec3(0,1,0);  // door green lamp
+        if (index < 5.5) return vec3(1,0,0);  // enemy red
+        if (index < 6.5) return vec3(1,0,0);  // bullt red
     }
 
     vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position, float depth)
@@ -110,16 +112,25 @@ varying vec2 v_uv;
 
         vec4 color = texture2D(map, (uv + u_spriteLookup) * SPRITE_WIDTH / SHEET_WIDTH);
 
-        if (u_fire.r > -0.5 && color.a > .99 && color.r > .99 && color.g < .01) {
-            bool on = false;
 
-            if      (color.b < .25) on = u_fire.r > .5; 
-            else if (color.b < .5)  on = u_fire.g > .5;
-            else if (color.b < .75) on = u_fire.b > .5;
-            else                    on = u_fire.a > .5;
-            
-            color = on ? vec4(1,.7,.7,1) : vec4(0,0,0,0);
-            skip = true;
+        if (u_fire.r > -0.5) {
+            if (color.a > .99 && color.r > .99 && color.g < .01) {
+                bool on = false;
+
+                if      (color.b < .25) on = u_fire.r > .5; 
+                else if (color.b < .5)  on = u_fire.g > .5;
+                else if (color.b < .75) on = u_fire.b > .5;
+                else                    on = u_fire.a > .5;
+                
+                color = on ? vec4(1,.7,.7,1) : vec4(0,0,0,0);
+                skip = true;
+            }
+        }
+        else {
+            if (color.a > .99 && color.r > .99 && color.b > .99 && color.g < .01) {
+                color = vec4(1,.7,.7,1);
+                skip = true;
+            }
         }
 
         return color;
@@ -172,14 +183,14 @@ varying vec2 v_uv;
             }
         }
 
-        bool skip;
+        bool skip = false;
 
         vec3 normie = sprite(u_normMap, spriteUV, skip).xyz;
         normie.x = 1.0 - normie.x;
 
         vec4 albedo = sprite(u_tex, spriteUV, skip);
 
-        if (u_fire.r > -0.5 && skip) {
+        if (skip) {
             gl_FragColor = albedo;
             return;
         }

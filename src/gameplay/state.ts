@@ -31,6 +31,8 @@ export type GameSceneState = {
     rolls: number[],
     dudes: vec2[],
     wonTime: number,
+    bullets: {pos: vec2, vel: vec2}[],
+    health: number,
 };
 
 export type TransitionSceneState = {
@@ -39,6 +41,23 @@ export type TransitionSceneState = {
     newGameRenderer: GameRenderer,
     time: number,
 };
+
+
+const getLockedAngle = (angle: number): number => {
+    const aa = Math.abs(angle);
+    let z = 0;
+
+    if      (aa <    3.14159 / 8) z= 0;
+    else if (aa < 3.*3.14159 / 8) z= 2*3.14159/8;
+    else if (aa < 5.*3.14159 / 8) z= 4*3.14159/8;
+    else if (aa < 7.*3.14159 / 8) z= 6*3.14159/8;
+    else z = 3.14159;
+
+    if (angle < 0) z *= -1;
+    return z;
+};
+
+
 
 export type GameState = GameSceneState | TransitionSceneState;
 
@@ -92,6 +111,27 @@ export const getLightsForGameState = (state: GameState): Light[] => {
         });
     }
 
+    state.cave.placements.enemies.forEach(x => {
+        ret.push({
+            pos: vec2.fromValues(
+                x.pos[0] + magic.enemyLightDist*Math.cos(getLockedAngle(x.angle)),
+                x.pos[1] + magic.enemyLightDist*Math.sin(getLockedAngle(x.angle)),
+            ),
+            depth: magic.enemySurfaceDepth,
+            brightness: magic.enemyBrightness,
+            colorIndex: 5,
+        });
+    });
+
+    state.bullets.forEach(x => {
+        ret.push({
+            pos: x.pos,
+            depth: magic.enemySurfaceDepth,
+            brightness: magic.enemyBrightness,
+            colorIndex: 5,
+        });
+    });
+
     return ret;
 };
 
@@ -114,6 +154,8 @@ const stepGameScene = (prevState: GameSceneState, inputs: InputState): GameState
         rolls: [Math.random(), Math.random(), Math.random(), Math.random(), Math.random()],
         dudes: prevState.dudes as any,
         wonTime: prevState.wonTime,
+        bullets: prevState.bullets,
+        health: 3,
     };
 
     const alreadyWon = state.wonTime > 0;
@@ -192,6 +234,38 @@ const stepGameScene = (prevState: GameSceneState, inputs: InputState): GameState
         }
     }
 
+    state.bullets.forEach(b => {
+        b.pos[0] += b.vel[0];
+        b.pos[1] += b.vel[1];
+    });
+
+    state.bullets = state.bullets.filter(b => {
+        for (let i = 0; i < state.cave.edges.length; ++i) {
+            const col = circleCollision(state.cave.edges[i], b.pos[0], b.pos[1], 3 / 256);
+            if(col) return false;
+        }
+        return true;
+    });
+
+    if (state.time % 60 === 0) {
+        state.cave.placements.enemies.forEach(e => {
+            const vel = vec2.fromValues(
+                Math.cos(getLockedAngle(e.angle)),
+                Math.sin(getLockedAngle(e.angle))
+            );
+
+            vec2.scale(vel, vel, 0.005);
+
+            state.bullets.push({
+                pos: vec2.fromValues(
+                    e.pos[0] + 5*vel[0],
+                    e.pos[1] + 5*vel[1]
+                ),
+                vel
+            });
+        });
+    }
+
     return state;
 };
 
@@ -219,6 +293,8 @@ export const GameState = {
         rolls: [0,0,0,0,0],
         dudes: cave.placements.dudes,
         wonTime: -1,
+        bullets: [],
+        health: 3,
     }),
 
     createTransition: (gl: WebGLRenderingContext): GameState => {

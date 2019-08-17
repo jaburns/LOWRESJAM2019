@@ -1,7 +1,9 @@
 import { vec2 } from "gl-matrix";
 
+type Enemy = {angle:number, pos:vec2};
+
 export type CavePlacements = {
-    enemies: vec2[],
+    enemies: Enemy[],
     floorMid: vec2,
     dudes: vec2[],
     door: vec2,
@@ -9,7 +11,7 @@ export type CavePlacements = {
 
 export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
     const floorCandidates: {m: vec2, t: vec2}[] = [];
-    let enemyCandidates: vec2[] = [];
+    let enemyCandidates: {m: vec2, t: vec2}[] = [];
 
     lines.forEach(blob => {
         for (let i = 0; i < blob.length; ++i) {
@@ -27,7 +29,7 @@ export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
                  || blob[i][0] >  .9 || blob[j][0] >  0.9) {
                 }
                 else 
-                    enemyCandidates.push(vec2.clone(mid));
+                    enemyCandidates.push({m: mid, t: diff});
 
             if ((Math.abs(diff[0]) - Math.abs(diff[1]) > 0.5) && dir < 0) {
 
@@ -119,14 +121,17 @@ export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
     const ENEMY_DIST_FROM_DUDE = 0.01;
     const ENEMY_MUTUAL_DISTANCE= 0.1;
 
-    enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(door, y) > ENEMY_DIST_FROM_DUDE);
-    dudes.forEach(x => { enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(x, y) > ENEMY_DIST_FROM_DUDE); });
+    enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(door, y.m) > ENEMY_DIST_FROM_DUDE);
+    dudes.forEach(x => { enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(x, y.m) > ENEMY_DIST_FROM_DUDE); });
 
-    let enemies = [];
+    let enemies: Enemy[] = [];
     while (enemyCandidates.length > 0) {
         const newEnemy = enemyCandidates[Math.floor(Math.random() * enemyCandidates.length)];
-        enemies.push(newEnemy);
-        enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(newEnemy, y) > ENEMY_MUTUAL_DISTANCE);
+        enemies.push({
+            pos: newEnemy.m,
+            angle: Math.atan2(-newEnemy.t[0], newEnemy.t[1])
+        });
+        enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(newEnemy.m, y.m) > ENEMY_MUTUAL_DISTANCE);
     }
 
     door[1] += 4/256;

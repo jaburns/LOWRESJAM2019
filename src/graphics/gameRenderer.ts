@@ -220,9 +220,15 @@ export class GameRenderer {
         });
 
         state.cave.placements.enemies.forEach(enemy => {
-            drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(3,3), state.cameraPos, lights, enemy);
+            const lookup = getSpriteLookupForShipAngle(enemy.angle);
+            lookup[1] += 4;
+            drawSprite(gl, this.texturePack!, masterBrightness, lookup, state.cameraPos, lights, enemy.pos);
+
         });
 
+        state.bullets.forEach(bullet => {
+            drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(3,3), state.cameraPos, lights, bullet.pos);
+        });
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);

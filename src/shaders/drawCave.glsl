@@ -55,6 +55,8 @@ varying vec2 v_uv;
         if (index < 2.5) return vec3(.5,1,1);  // dude lamp
         if (index < 3.5) return vec3(1,0,0);  // door red lamp
         if (index < 4.5) return vec3(0,1,0);  // door green lamp
+        if (index < 5.5) return vec3(1,0,0);  // enemy red
+        if (index < 6.5) return vec3(1,0,0);  // bullt red
     }
 
     vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position, float depth)
