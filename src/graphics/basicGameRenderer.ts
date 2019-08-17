@@ -40,7 +40,7 @@ export class BasicGameRenderer {
         ctx.arc(fp[0], fp[1], 1, 0, 2*Math.PI);
         ctx.fill();
 
-        state.cave.placements.floorCandidates.forEach(v => {
+        state.cave.placements.enemies.forEach((v:vec2) => {
             ctx.beginPath();
             ctx.arc(f(v)[0], f(v)[1], 1.5, 0, 2*Math.PI);
             ctx.fill();

@@ -1,7 +1,7 @@
 import { vec2 } from "gl-matrix";
 
 export type CavePlacements = {
-    floorCandidates: vec2[],
+    enemies: vec2[],
     floorMid: vec2,
     dudes: vec2[],
     door: vec2,
@@ -9,6 +9,7 @@ export type CavePlacements = {
 
 export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
     const floorCandidates: {m: vec2, t: vec2}[] = [];
+    let enemyCandidates: vec2[] = [];
 
     lines.forEach(blob => {
         for (let i = 0; i < blob.length; ++i) {
@@ -17,10 +18,18 @@ export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
             const diff = vec2.sub(vec2.create(), blob[i], blob[j]);
             vec2.normalize(diff, diff);
             const dir = vec2.dot(diff, [1,0]);
+            const mid = vec2.add(vec2.create(), blob[i], blob[j]);
+            vec2.scale(mid, mid, 0.5);
+
+                if (blob[i][0] < -.9 || blob[j][0] < -0.9
+                 || blob[i][1] < -.9 || blob[j][1] < -0.9
+                 || blob[i][1] >  .9 || blob[j][1] >  0.9
+                 || blob[i][0] >  .9 || blob[j][0] >  0.9) {
+                }
+                else 
+                    enemyCandidates.push(vec2.clone(mid));
 
             if ((Math.abs(diff[0]) - Math.abs(diff[1]) > 0.5) && dir < 0) {
-                const mid = vec2.add(vec2.create(), blob[i], blob[j]);
-                vec2.scale(mid, mid, 0.5);
 
                 if (blob[i][0] < -.9 || blob[j][0] < -0.9
                  || blob[i][1] < -.9 || blob[j][1] < -0.9
@@ -90,7 +99,6 @@ export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
     ].map(findFloor);
 
     door = findFlatestClose(door);
-    door[1] += 4/256;
 
     for (let tries = 0; tries < 10; ++tries) {
         for (let i = dudes.length - 2; i >= 0; --i) {
@@ -101,7 +109,6 @@ export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
             }
         }
 
-        console.log(dudes.length);
         if (dudes.length === 10) break;
 
         while (dudes.length < 10) {
@@ -109,12 +116,26 @@ export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
         }
     }
 
+    const ENEMY_DIST_FROM_DUDE = 0.01;
+    const ENEMY_MUTUAL_DISTANCE= 0.1;
+
+    enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(door, y) > ENEMY_DIST_FROM_DUDE);
+    dudes.forEach(x => { enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(x, y) > ENEMY_DIST_FROM_DUDE); });
+
+    let enemies = [];
+    while (enemyCandidates.length > 0) {
+        const newEnemy = enemyCandidates[Math.floor(Math.random() * enemyCandidates.length)];
+        enemies.push(newEnemy);
+        enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(newEnemy, y) > ENEMY_MUTUAL_DISTANCE);
+    }
+
+    door[1] += 4/256;
     dudes.forEach(x => x[1] += 3/256);
 
     return {
         floorMid: mid,
         door,
         dudes,
-        floorCandidates: floorCandidates.map(x => x.m),
+        enemies
     };
 };

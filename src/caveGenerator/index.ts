@@ -76,6 +76,19 @@ const fixSingleTileBridges = (grid: WriteGrid<boolean>): void => {
     });
 };
 
+const fixWindingDirection = (contour: vec2[]): vec2[] => {
+    let wind = 0;
+    for (let i = 0; i < contour.length-1; ++i) {
+        wind += (contour[i+1][1] + contour[i][1]) * (contour[i+1][0] - contour[i][0]);
+    }
+
+    if (wind < 0) {
+        return contour.reverse();
+    }
+
+    return contour;
+};
+
 export const generateCave = (seed: number, scaleDown: number = 1): Cave => 
     generateCaveVerbose(seed, scaleDown).cave;
 
@@ -135,11 +148,13 @@ export const generateCaveVerbose = (seed: number, scaleDown: number): { cave: Ca
     smoothContours[outerMostContourIndex][topLeftPtI+5][0] = topLeftPrevPt[0];
     smoothContours[outerMostContourIndex][topLeftPtI+5][1] = topLeftPrevPt[1];
 
+    const fixedContours = smoothContours.map(fixWindingDirection);
+
     return {
         cave: {
-            edges: smoothContours,
+            edges: fixedContours,
             triangles,
-            placements: getCavePlacements(smoothContours),
+            placements: getCavePlacements(fixedContours),
         },
         details: {
             automatonResult,

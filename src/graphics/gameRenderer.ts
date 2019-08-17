@@ -219,6 +219,11 @@ export class GameRenderer {
             drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(Math.floor(state.time/8)%6,2), state.cameraPos, lights, dude);
         });
 
+        state.cave.placements.enemies.forEach(enemy => {
+            drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(3,3), state.cameraPos, lights, enemy);
+        });
+
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
