@@ -15,6 +15,11 @@ type Magic<T> = {
     lampSurfaceDepth: T,
     lampBrightness:   T,
     lampPlacement:    T,
+    doorLightSurfaceDepth: T,
+    doorLightBrightness:   T,
+    doorLightYpos:         T,
+    doorLightXposRed:      T,
+    doorLightXposGreen:    T,
 };
 
 export const magicRange: Magic<NumberRange> = {
@@ -29,9 +34,22 @@ export const magicRange: Magic<NumberRange> = {
     lampSurfaceDepth: { lower: -.1, upper: .1 },
     lampBrightness:   { lower: 0, upper: 1 },
     lampPlacement: { lower: -.1, upper: .1 },
+
+    doorLightSurfaceDepth: { lower: -.1, upper: .1 },
+    doorLightBrightness:   { lower: 0, upper: 1 },
+    doorLightYpos: { lower: -.1, upper: .1 },
+    doorLightXposRed: { lower: -.1, upper: .1 },
+    doorLightXposGreen: { lower: -.1, upper: .1 },
 };
 
 export let magic: Magic<number> =
-{bgParallax:4,bgSurfaceDepth:0.09,bgBrightness:0.58,caveSurfaceDepth:0.07,caveBrightness:0.17,fireSurfaceDepth:-0.06,fireBrightness:0.09,fireShipDistance:0.018,lampSurfaceDepth:-0.032,lampBrightness:0.22,
-        lampPlacement: 0.018}
+
+// PAASSTTEE ============================================
+
+
+{bgParallax:4,bgSurfaceDepth:0.09,bgBrightness:0.58,caveSurfaceDepth:0.07,caveBrightness:0.17,fireSurfaceDepth:-0.06,fireBrightness:0.09,fireShipDistance:0.018,lampSurfaceDepth:-0.032,lampBrightness:0.22,lampPlacement:0.018,doorLightSurfaceDepth:-0.052,doorLightBrightness:0.08,doorLightYpos:0.014,doorLightXposRed:0.006,doorLightXposGreen:-0.004}
+
+
+// =======================================================
+
 ;

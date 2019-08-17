@@ -1,5 +1,5 @@
 import { Cave } from "caveGenerator";
-import { GameState } from "gameplay/state";
+import { GameState, GameSceneState } from "gameplay/state";
 import { vec2 } from "gl-matrix";
 
 export class BasicGameRenderer {
@@ -9,7 +9,7 @@ export class BasicGameRenderer {
         this.ctx = canvas.getContext('2d')!;
     }
 
-    draw(state: GameState) {
+    draw(state: GameSceneState) {
         const ctx = this.ctx;
 
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -35,25 +35,24 @@ export class BasicGameRenderer {
 
         const fp = f(state.playerPos);
 
-        ctx.fillStyle = '#f00';
+        ctx.fillStyle = '#0f0';
         ctx.beginPath();
         ctx.arc(fp[0], fp[1], 1, 0, 2*Math.PI);
         ctx.fill();
 
-        state.latestCollisions.forEach(({ a, b, t }) => {
-            if (a === b) {
-                ctx.fillStyle = '#f00';
-                ctx.beginPath();
-                ctx.arc(f(a)[0], f(a)[1], 1, 0, 2*Math.PI);
-                ctx.fill();
-            } else {
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#0f0';
-                ctx.beginPath();
-                ctx.moveTo(f(a)[0], f(a)[1]);
-                ctx.lineTo(f(b)[0], f(b)[1]);
-                ctx.stroke();
-            }
+        state.cave.placements.floorCandidates.forEach(v => {
+            ctx.beginPath();
+            ctx.arc(f(v)[0], f(v)[1], 1.5, 0, 2*Math.PI);
+            ctx.fill();
         });
+
+        {
+            const vvv = state.cave.placements.door;
+
+            ctx.fillStyle = '#f00';
+            ctx.beginPath();
+            ctx.arc(f(vvv)[0], f(vvv)[1], 1.5, 0, 2*Math.PI);
+            ctx.fill();
+        }
     }
 }

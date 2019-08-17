@@ -1,37 +1,37 @@
-import { generateCave } from "caveGenerator";
 import { GameRenderer } from "graphics/gameRenderer";
 import { GameState } from "gameplay/state";
 import { InputGrabber } from "gameplay/inputs";
-import { BasicGameRenderer } from "graphics/basicGameRenderer";
 import { magicRange, magic } from "gameplay/magic";
+import { BasicGameRenderer } from "graphics/basicGameRenderer";
 
 const REWIND_COUNT = 300;
 const FRAME_SECONDS = 1 / 60;
-const TEXTURES = [
-    'ship.png',
-    'normals.png',
-];
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-const deb = document.getElementById('debug-canvas') as HTMLCanvasElement;
+const debugCanvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
+const gl = canvas.getContext('webgl')!;
 
-const cave = generateCave(1339, .7);
-const renderer = new GameRenderer(canvas, cave, TEXTURES);
-const debber = new BasicGameRenderer(deb);
 const startTime = (new Date).getTime() / 1000;
 const inputGrabber = new InputGrabber(canvas);
 const rewindStack: GameState[] = [];
 
+const debugRenderer: BasicGameRenderer = new BasicGameRenderer(debugCanvas);
+
+let renderer: GameRenderer | null = null;
+
 let previousTime = startTime;
 let frameAccTime = 0;
-let gameState = GameState.create(cave);
+let gameState = GameState.createTransition(gl);
 let currentRewindIndex = -1;
 
 const frame = () => {
     const newTime = (new Date).getTime() / 1000;
     const deltaTime = newTime - previousTime;
-    const monotonicTime = newTime - startTime;
     previousTime = newTime;
+
+    if (gameState.scene === "transition") {
+        renderer = gameState.newGameRenderer;
+    }
 
     if (currentRewindIndex < 0) {
         frameAccTime += deltaTime;
@@ -48,8 +48,10 @@ const frame = () => {
         gameState = rewindStack[currentRewindIndex];
     }
 
-    renderer.draw(gameState);
-    debber.draw(gameState);
+    if (gameState.scene === "game" && renderer !== null) {
+        renderer.draw(gameState);
+        debugRenderer.draw(gameState);
+    }
 
     requestAnimationFrame(frame);
 };

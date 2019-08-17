@@ -1,4 +1,4 @@
-import { GameState, getLightsForGameState, Light } from "gameplay/state";
+import { GameState, getLightsForGameState, Light, GameSceneState } from "gameplay/state";
 import { Cave } from "caveGenerator";
 import { drawCave, CaveTextures } from "graphics/caveRenderer";
 import { FrameBufferTexture } from "./frameBufferTexture";
@@ -10,6 +10,9 @@ import { magic } from "gameplay/magic";
 
 const MAP_SIZE = 512;
 const BG_SIZE = 512;
+
+const START_FADE = 50;
+export const END_FADE = 80;
 
 type TexturePack = {[name: string]: WebGLTexture};
 
@@ -43,7 +46,7 @@ const bindLightInfo = (gl: WebGLRenderingContext, shader: WebGLShader, cameraPos
     }
 };
 
-const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, lookup: vec2, cameraPos: vec2, lights: Light[], pos: vec2) => {
+const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, masterBrightness: number, lookup: vec2, cameraPos: vec2, lights: Light[], pos: vec2) => {
     drawBuffer(gl, getShaders(gl).sprite, null, shader => {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, texturePack['ship']);
@@ -58,6 +61,8 @@ const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, lookup:
         gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
         gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), pos);
 
+        gl.uniform1f(gl.getUniformLocation(shader, "u_masterBrightness"), masterBrightness);
+
         gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
         bindLightInfo(gl, shader, cameraPos, lights);
     });
@@ -70,8 +75,7 @@ export class GameRenderer {
     private readonly backgroundTex: WebGLTexture;
     private texturePack: TexturePack | null = null;
 
-    constructor(canvas: HTMLCanvasElement, cave: Cave, texturePaths: string[]) {
-        const gl = canvas.getContext('webgl')!;
+    constructor(gl: WebGLRenderingContext, cave: Cave, texturePaths: string[]) {
         this.gl = gl;
 
         gl.enable(gl.BLEND);
@@ -110,7 +114,7 @@ export class GameRenderer {
         });
     }
 
-    draw(state: GameState) {
+    draw(state: GameSceneState) {
         const gl = this.gl;
 
         if (this.texturePack === null) {
@@ -138,6 +142,12 @@ export class GameRenderer {
         const lights = getLightsForGameState(state);
         lights.sort((a, b) => vec2.sqrDist(a.pos, cameraPos) - vec2.sqrDist(b.pos, cameraPos));
 
+        let startingFade = state.time / START_FADE;
+        if (startingFade > 1) startingFade = 1;
+        let endingFade = state.wonTime > 0 ? 1 - (state.time - state.wonTime) / END_FADE : 1;
+        if (endingFade < 0) endingFade = 0;
+        const masterBrightness = startingFade * endingFade;
+
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.backgroundTex);
@@ -154,28 +164,37 @@ export class GameRenderer {
             gl.uniform1f(gl.getUniformLocation(shader, "u_surfaceDepth"), magic.bgSurfaceDepth);
             gl.uniform1f(gl.getUniformLocation(shader, "u_brightness"), magic.bgBrightness);
 
+            gl.uniform1f(gl.getUniformLocation(shader, "u_masterBrightness"), masterBrightness);
+
             gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.bgSurfaceDepth);
             gl.uniform1f(gl.getUniformLocation(shader, "u_brightnessMultiplier"), magic.bgBrightness);
             bindLightInfo(gl, shader, state.cameraPos, lights);
         });
 
-        drawBuffer(gl, getShaders(gl).sprite, null, shader => {
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['ship']);
-            gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
+        drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(state.dudes.length > 0 ? 0 : 1,3), state.cameraPos, lights, state.cave.placements.door);
+        drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(2,3), state.cameraPos, lights, vec2.fromValues(state.cave.placements.door[0], state.cave.placements.door[1] - 8/256));
 
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['normals']);
-            gl.uniform1i(gl.getUniformLocation(shader, "u_normMap"), 1);
+        if (state.wonTime < 0) {
+            drawBuffer(gl, getShaders(gl).sprite, null, shader => {
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['ship']);
+                gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
 
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_spriteLookup"), getSpriteLookupForShipAngle(state.playerRads));
-            gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), firePattern);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
-            gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), state.playerPos);
+                gl.activeTexture(gl.TEXTURE1);
+                gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['normals']);
+                gl.uniform1i(gl.getUniformLocation(shader, "u_normMap"), 1);
 
-            gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
-            bindLightInfo(gl, shader, state.cameraPos, lights);
-        });
+                gl.uniform2fv(gl.getUniformLocation(shader, "u_spriteLookup"), getSpriteLookupForShipAngle(state.playerRads));
+                gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), firePattern);
+                gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
+                gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), state.playerPos);
+
+                gl.uniform1f(gl.getUniformLocation(shader, "u_masterBrightness"), masterBrightness);
+
+                gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
+                bindLightInfo(gl, shader, state.cameraPos, lights);
+            });
+        }
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
@@ -189,16 +208,16 @@ export class GameRenderer {
             gl.uniform1f(gl.getUniformLocation(shader, "u_fire"), fireLevel);
             gl.uniform1f(gl.getUniformLocation(shader, "u_distScale"), 4);
 
+            gl.uniform1f(gl.getUniformLocation(shader, "u_masterBrightness"), masterBrightness);
+
             gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
             gl.uniform1f(gl.getUniformLocation(shader, "u_brightnessMultiplier"), 1);
             bindLightInfo(gl, shader, state.cameraPos, lights);
         });
 
         state.dudes.forEach(dude => {
-            drawSprite(gl, this.texturePack!, vec2.fromValues(Math.floor(state.time/8)%6,2), state.cameraPos, lights, dude);
+            drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(Math.floor(state.time/8)%6,2), state.cameraPos, lights, dude);
         });
-
-        drawSprite(gl, this.texturePack!, vec2.fromValues(0,3), state.cameraPos, lights, vec2.fromValues(0,0));
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);

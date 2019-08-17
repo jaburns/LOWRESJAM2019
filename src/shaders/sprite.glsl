@@ -10,6 +10,8 @@ uniform vec2 u_spritePos;
 
 uniform float u_baseLightDistance;
 
+uniform float u_masterBrightness;
+
 uniform vec4 u_lightInfo0;
 uniform vec4 u_lightInfo1;
 uniform vec4 u_lightInfo2;
@@ -51,13 +53,17 @@ varying vec2 v_uv;
 
     vec3 colorForIndex(float index)
     {
-        if (index < 0.5) return vec3(1,1,1);
-        if (index < 1.5) return vec3(1,0,0);
-        if (index < 2.5) return vec3(.5,1,1);
+        if (index < 0.5) return vec3(1,1,1);   // ship lamp
+        if (index < 1.5) return vec3(1,0,0);   // ship fire
+        if (index < 2.5) return vec3(.5,1,1);  // dude lamp
+        if (index < 3.5) return vec3(1,0,0);  // door red lamp
+        if (index < 4.5) return vec3(0,1,0);  // door green lamp
     }
 
     vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position, float depth)
     {
+        brightness *= u_masterBrightness;
+
         vec3 fromLight = vec3(u_distScale*(lookupUV - (.5*position+.5)), depth);
         vec3 dir = normalize(fromLight);
         float len = length(fromLight);

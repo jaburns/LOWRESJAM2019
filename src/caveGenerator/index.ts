@@ -5,10 +5,12 @@ import { smoothCurve } from './smoothCurve';
 import { findBounds, RectTool } from 'utils/math';
 import { triangulate } from './triangulate';
 import { vec2 } from 'gl-matrix';
+import { CavePlacements, getCavePlacements } from './placements';
 
 export type Cave = {
     edges: vec2[][],
     triangles: number[][],
+    placements: CavePlacements,
 };
 
 export type CaveBuildDetails = {
@@ -136,7 +138,8 @@ export const generateCaveVerbose = (seed: number, scaleDown: number): { cave: Ca
     return {
         cave: {
             edges: smoothContours,
-            triangles
+            triangles,
+            placements: getCavePlacements(smoothContours),
         },
         details: {
             automatonResult,
