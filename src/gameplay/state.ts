@@ -45,6 +45,11 @@ export const getLightsForGameState = (state: GameState): Light[] => {
         depth: magic.fireSurfaceDepth,
         brightness: state.shipFiring ? magic.fireBrightness : 0,
         colorIndex: 1
+    },{
+        pos: vec2.fromValues(0.1,-0.03+magic.lampPlacement),
+        depth: magic.lampSurfaceDepth,
+        brightness: magic.lampBrightness,
+        colorIndex: 2
     }];
 };
 

@@ -12,8 +12,11 @@ uniform float u_brightnessMultiplier;
 
 uniform vec4 u_lightInfo0;
 uniform vec4 u_lightInfo1;
+uniform vec4 u_lightInfo2;
 
 varying vec2 v_uv;
+
+#define CAVE_ALBEDO vec3(.88,1.,.88)
 
 #define SCREEN_RES 64.0
 
@@ -34,6 +37,7 @@ varying vec2 v_uv;
     {
         if (index < 0.5) return vec3(1,1,1);
         if (index < 1.5) return vec3(1,0,0);
+        if (index < 2.5) return vec3(.5,1,1);
     }
 
     vec3 pointLight(vec2 lookupUV, vec3 normal, vec3 color, float brightness, vec2 position, float depth)
@@ -58,14 +62,16 @@ varying vec2 v_uv;
     vec4 caveAllLights(vec2 lookupUV, vec2 vuv, vec3 normie)
     {
         return cavePointLight(lookupUV, vuv, normie, u_lightInfo0)
-            + cavePointLight(lookupUV, vuv, normie, u_lightInfo1);
+            + cavePointLight(lookupUV, vuv, normie, u_lightInfo1)
+            + cavePointLight(lookupUV, vuv, normie, u_lightInfo2)
+            ;
     }
 
     void main()
     {
         vec2 lookupUV = (v_uv - 0.5) * SCREEN_RES / u_texRes + (.5*u_cameraPos+.5);
         vec4 normalMapLookup = texture2D(u_tex, u_uvScale * lookupUV);
-        gl_FragColor = vec4(caveAllLights(lookupUV, v_uv, normalMapLookup.xyz).xyz, normalMapLookup.a);
+        gl_FragColor = vec4(caveAllLights(lookupUV, v_uv, normalMapLookup.xyz).xyz * CAVE_ALBEDO, normalMapLookup.a);
     }
 
 #endif

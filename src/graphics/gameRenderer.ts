@@ -40,13 +40,6 @@ const bindLightInfo = (gl: WebGLRenderingContext, shader: WebGLShader, cameraPos
 };
 
 const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, time: number, cameraPos: vec2, lights: Light[]) => {
-    const pos = [0, 0];
-
-    const steppyPos = [
-        cameraPos[0] + Math.floor((pos[0] - cameraPos[0]) * 256 - .0) / 256,
-        cameraPos[1] + Math.floor((pos[1] - cameraPos[1]) * 256 - .0) / 256
-    ];
-
     drawBuffer(gl, getShaders(gl).sprite, null, shader => {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, texturePack['ship']);
@@ -59,7 +52,7 @@ const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, time: n
         gl.uniform2fv(gl.getUniformLocation(shader, "u_spriteLookup"), [Math.floor(time/10)%6,2]);
         gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), [-1,-1,-1,-1]);
         gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
-        gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), steppyPos);
+        gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), [0.1,-.03]);
 
         gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
         bindLightInfo(gl, shader, cameraPos, lights);
