@@ -24,12 +24,11 @@ export type GameState = {
     cameraShakeT: number,
     rolls: number[],
     latestCollisions: {a:vec2, b:vec2, t:number}[],
+    dudes: vec2[],
 };
 
 export const getLightsForGameState = (state: GameState): Light[] => {
-    const normVel = vec2.normalize(vec2.create(), state.playerVel);
-
-    return [{
+    const ret = [{
         pos: vec2.fromValues(
             state.playerPos[0],
             state.playerPos[1]
@@ -37,20 +36,30 @@ export const getLightsForGameState = (state: GameState): Light[] => {
         depth: 0,
         brightness: magic.caveBrightness,
         colorIndex: 0
-    },{
-        pos: vec2.fromValues(
-            state.playerPos[0] - magic.fireShipDistance*Math.cos(state.playerRads),
-            state.playerPos[1] - magic.fireShipDistance*Math.sin(state.playerRads),
-        ),
-        depth: magic.fireSurfaceDepth,
-        brightness: state.shipFiring ? magic.fireBrightness : 0,
-        colorIndex: 1
-    },{
-        pos: vec2.fromValues(0.1,-0.03+magic.lampPlacement),
-        depth: magic.lampSurfaceDepth,
-        brightness: magic.lampBrightness,
-        colorIndex: 2
     }];
+
+    if (state.shipFiring) {
+        ret.push({
+            pos: vec2.fromValues(
+                state.playerPos[0] - magic.fireShipDistance*Math.cos(state.playerRads),
+                state.playerPos[1] - magic.fireShipDistance*Math.sin(state.playerRads),
+            ),
+            depth: magic.fireSurfaceDepth,
+            brightness: state.shipFiring ? magic.fireBrightness : 0,
+            colorIndex: 1
+        });
+    }
+
+    state.dudes.forEach(dude => {
+        ret.push({
+            pos: vec2.fromValues(dude[0], dude[1]+magic.lampPlacement),
+            depth: magic.lampSurfaceDepth,
+            brightness: magic.lampBrightness,
+            colorIndex: 2
+        });
+    });
+
+    return ret;
 };
 
 export const GameState = {
@@ -66,6 +75,7 @@ export const GameState = {
         cameraShakeT: 0,
         rolls: [0,0,0,0,0],
         latestCollisions: [],
+        dudes: [vec2.fromValues(0.1,-.03), vec2.fromValues(-0.1,-.03)]
     }),
 
     step: (prevState: Const<GameState>, inputs: InputState): GameState => {
@@ -83,6 +93,7 @@ export const GameState = {
             latestCollisions: prevState.latestCollisions
                 .map(({a, b, t}) => ({ a: vec2.clone(a as any), b: vec2.clone(b as any), t: t-0.05 }))
                 .filter(v => v.t >= 0),
+            dudes: prevState.dudes as any,
         };
 
         state.playerVel[1] -= 2.5e-5;

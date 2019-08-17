@@ -29,17 +29,21 @@ const getSpriteLookupForShipAngle = (angle: number): vec2 => {
 };
 
 const bindLightInfo = (gl: WebGLRenderingContext, shader: WebGLShader, cameraPos: vec2, allLights: Light[]) => {
-    for (let i = 0; i < allLights.length; ++i) {
-        gl.uniform4fv(gl.getUniformLocation(shader, "u_lightInfo" + i), [
-            allLights[i].pos[0],
-            allLights[i].pos[1],
-            allLights[i].depth,
-            allLights[i].brightness + allLights[i].colorIndex,
-        ]);
+    for (let i = 0; i < 16; ++i) {
+        if (i < allLights.length) {
+            gl.uniform4fv(gl.getUniformLocation(shader, "u_lightInfo" + i), [
+                allLights[i].pos[0],
+                allLights[i].pos[1],
+                allLights[i].depth,
+                allLights[i].brightness + allLights[i].colorIndex,
+            ]);
+        } else {
+            gl.uniform4fv(gl.getUniformLocation(shader, "u_lightInfo" + i), [0, 0, 0, 0]);
+        }
     }
 };
 
-const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, time: number, cameraPos: vec2, lights: Light[]) => {
+const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, lookup: vec2, cameraPos: vec2, lights: Light[], pos: vec2) => {
     drawBuffer(gl, getShaders(gl).sprite, null, shader => {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, texturePack['ship']);
@@ -49,10 +53,10 @@ const drawSprite = (gl: WebGLRenderingContext, texturePack: TexturePack, time: n
         gl.bindTexture(gl.TEXTURE_2D, texturePack['normals']);
         gl.uniform1i(gl.getUniformLocation(shader, "u_normMap"), 1);
 
-        gl.uniform2fv(gl.getUniformLocation(shader, "u_spriteLookup"), [Math.floor(time/10)%6,2]);
+        gl.uniform2fv(gl.getUniformLocation(shader, "u_spriteLookup"), lookup);
         gl.uniform4fv(gl.getUniformLocation(shader, "u_fire"), [-1,-1,-1,-1]);
         gl.uniform2fv(gl.getUniformLocation(shader, "u_cameraPos"), cameraPos);
-        gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), [0.1,-.03]);
+        gl.uniform2fv(gl.getUniformLocation(shader, "u_spritePos"), pos);
 
         gl.uniform1f(gl.getUniformLocation(shader, "u_baseLightDistance"), magic.caveSurfaceDepth);
         bindLightInfo(gl, shader, cameraPos, lights);
@@ -132,6 +136,7 @@ export class GameRenderer {
         cameraPos[1] += state.cameraShake[1] * cameraShakeVal;
 
         const lights = getLightsForGameState(state);
+        lights.sort((a, b) => vec2.sqrDist(a.pos, cameraPos) - vec2.sqrDist(b.pos, cameraPos));
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
@@ -189,7 +194,11 @@ export class GameRenderer {
             bindLightInfo(gl, shader, state.cameraPos, lights);
         });
 
-        drawSprite(gl, this.texturePack, state.time, state.cameraPos, lights);
+        state.dudes.forEach(dude => {
+            drawSprite(gl, this.texturePack!, vec2.fromValues(Math.floor(state.time/8)%6,2), state.cameraPos, lights, dude);
+        });
+
+        drawSprite(gl, this.texturePack!, vec2.fromValues(0,3), state.cameraPos, lights, vec2.fromValues(0,0));
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);

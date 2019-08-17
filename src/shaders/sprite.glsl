@@ -13,6 +13,19 @@ uniform float u_baseLightDistance;
 uniform vec4 u_lightInfo0;
 uniform vec4 u_lightInfo1;
 uniform vec4 u_lightInfo2;
+uniform vec4 u_lightInfo3;
+uniform vec4 u_lightInfo4;
+uniform vec4 u_lightInfo5;
+uniform vec4 u_lightInfo6;
+uniform vec4 u_lightInfo7;
+uniform vec4 u_lightInfo8;
+uniform vec4 u_lightInfo9;
+uniform vec4 u_lightInfo10;
+uniform vec4 u_lightInfo11;
+uniform vec4 u_lightInfo12;
+uniform vec4 u_lightInfo13;
+uniform vec4 u_lightInfo14;
+uniform vec4 u_lightInfo15;
 
 varying vec2 v_uv;
 
@@ -66,9 +79,22 @@ varying vec2 v_uv;
     vec4 spriteAllLights(vec2 vuv, vec3 normie)
     {
         return spritePointLight(vuv, normie, u_lightInfo0)
-            + spritePointLight(vuv, normie, u_lightInfo1)
-            + spritePointLight(vuv, normie, u_lightInfo2)
-            ;
+             + spritePointLight(vuv, normie, u_lightInfo1)
+             + spritePointLight(vuv, normie, u_lightInfo2)
+             + spritePointLight(vuv, normie, u_lightInfo3)
+             + spritePointLight(vuv, normie, u_lightInfo4)
+             + spritePointLight(vuv, normie, u_lightInfo5)
+             + spritePointLight(vuv, normie, u_lightInfo6)
+             + spritePointLight(vuv, normie, u_lightInfo7)
+             + spritePointLight(vuv, normie, u_lightInfo8)
+             + spritePointLight(vuv, normie, u_lightInfo9)
+             + spritePointLight(vuv, normie, u_lightInfo10)
+             + spritePointLight(vuv, normie, u_lightInfo11)
+             + spritePointLight(vuv, normie, u_lightInfo12)
+             + spritePointLight(vuv, normie, u_lightInfo13)
+             + spritePointLight(vuv, normie, u_lightInfo14)
+             + spritePointLight(vuv, normie, u_lightInfo15)
+        ;
     }
 
     vec4 sprite(sampler2D map, vec2 uv, out bool skip) 

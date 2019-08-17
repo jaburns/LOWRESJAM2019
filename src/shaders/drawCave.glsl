@@ -13,6 +13,19 @@ uniform float u_brightnessMultiplier;
 uniform vec4 u_lightInfo0;
 uniform vec4 u_lightInfo1;
 uniform vec4 u_lightInfo2;
+uniform vec4 u_lightInfo3;
+uniform vec4 u_lightInfo4;
+uniform vec4 u_lightInfo5;
+uniform vec4 u_lightInfo6;
+uniform vec4 u_lightInfo7;
+uniform vec4 u_lightInfo8;
+uniform vec4 u_lightInfo9;
+uniform vec4 u_lightInfo10;
+uniform vec4 u_lightInfo11;
+uniform vec4 u_lightInfo12;
+uniform vec4 u_lightInfo13;
+uniform vec4 u_lightInfo14;
+uniform vec4 u_lightInfo15;
 
 varying vec2 v_uv;
 
@@ -62,9 +75,22 @@ varying vec2 v_uv;
     vec4 caveAllLights(vec2 lookupUV, vec2 vuv, vec3 normie)
     {
         return cavePointLight(lookupUV, vuv, normie, u_lightInfo0)
-            + cavePointLight(lookupUV, vuv, normie, u_lightInfo1)
-            + cavePointLight(lookupUV, vuv, normie, u_lightInfo2)
-            ;
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo1)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo2)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo3)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo4)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo5)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo6)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo7)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo8)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo9)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo10)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo11)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo12)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo13)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo14)
+             + cavePointLight(lookupUV, vuv, normie, u_lightInfo15)
+         ;
     }
 
     void main()
