@@ -43,7 +43,7 @@ varying vec2 v_uv;
         float len = length(fromLight);
 
         float falloff = pow((len / brightness + 1.0), -2.0);
-        float intensity = dot(dir, 2.0*normal-1.0);
+        float intensity = clamp(dot(dir, 2.0*normal-1.0), 0., 1.);
 
         return color * intensity * falloff;
     }

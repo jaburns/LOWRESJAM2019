@@ -48,7 +48,7 @@ varying vec2 v_uv;
         float len = length(fromLight);
 
         float falloff = pow((len / brightness + 1.0), -2.0);
-        float intensity = dot(dir, 2.0*normal-1.0);
+        float intensity = clamp(dot(dir, 2.0*normal-1.0), 0., 1.);
 
         return color * intensity * falloff;
     }
@@ -90,6 +90,10 @@ varying vec2 v_uv;
 
     void main()
     {
+     // vec2 lookupUV = (v_uv - 0.5) * SCREEN_RES / u_texRes + (.5*u_cameraPos+.5);
+
+     // vec2 pixelCoordinate
+
         float lower = 32.0 - (SPRITE_WIDTH + 1.0) / 2.0; 
         float upper = 32.0 + (SPRITE_WIDTH - 1.0) / 2.0; 
 
