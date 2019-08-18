@@ -9,7 +9,7 @@ export type CavePlacements = {
     door: vec2,
 };
 
-export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
+export const getCavePlacements = (lines: vec2[][], challenge: number): CavePlacements => {
     const floorCandidates: {m: vec2, t: vec2}[] = [];
     let enemyCandidates: {m: vec2, t: vec2}[] = [];
 
@@ -118,8 +118,10 @@ export const getCavePlacements = (lines: vec2[][]): CavePlacements => {
         }
     }
 
+    if (challenge > 5) challenge = 5;
+
     const ENEMY_DIST_FROM_DUDE = 0.01;
-    const ENEMY_MUTUAL_DISTANCE= 0.1;
+    const ENEMY_MUTUAL_DISTANCE= (0.01 - 0.1) * (challenge / 5) + 0.1;
 
     enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(door, y.m) > ENEMY_DIST_FROM_DUDE);
     dudes.forEach(x => { enemyCandidates = enemyCandidates.filter(y => vec2.sqrDist(x, y.m) > ENEMY_DIST_FROM_DUDE); });

@@ -1,8 +1,9 @@
 import { GameRenderer } from "graphics/gameRenderer";
-import { GameState } from "gameplay/state";
+import { GameState, LoadMenuState } from "gameplay/state";
 import { InputGrabber } from "gameplay/inputs";
 import { magicRange, magic } from "gameplay/magic";
-import { BasicGameRenderer } from "graphics/basicGameRenderer";
+import { drawBuffer } from "graphics/bufferRenderer";
+// import { BasicGameRenderer } from "graphics/basicGameRenderer";
 
 const REWIND_COUNT = 300;
 const FRAME_SECONDS = 1 / 60;
@@ -12,16 +13,22 @@ const debugCanvas = document.getElementById('debug-canvas') as HTMLCanvasElement
 const gl = canvas.getContext('webgl')!;
 
 const startTime = (new Date).getTime() / 1000;
-const inputGrabber = new InputGrabber(canvas);
+const inputGrabber = new InputGrabber();
 const rewindStack: GameState[] = [];
 
-const debugRenderer: BasicGameRenderer = new BasicGameRenderer(debugCanvas);
+const TEXTURES = [
+    'ship.png',
+    'normals.png',
+    'title.png',
+];
 
-let renderer: GameRenderer | null = null;
+// const debugRenderer: BasicGameRenderer = new BasicGameRenderer(debugCanvas);
+
+let renderer: GameRenderer = new GameRenderer(gl, null, TEXTURES);
 
 let previousTime = startTime;
 let frameAccTime = 0;
-let gameState = GameState.createTransition(gl);
+let gameState = GameState.createMenu(gl);
 let currentRewindIndex = -1;
 
 const frame = () => {
@@ -39,18 +46,18 @@ const frame = () => {
             frameAccTime -= FRAME_SECONDS;
             gameState = GameState.step(gameState, inputGrabber.getCurrentState());
 
-            rewindStack.push(gameState);
-            if (rewindStack.length > REWIND_COUNT) {
-                rewindStack.shift();
-            }
+        //  rewindStack.push(gameState);
+        //  if (rewindStack.length > REWIND_COUNT) {
+        //      rewindStack.shift();
+        //  }
         }
     } else {
         gameState = rewindStack[currentRewindIndex];
     }
 
-    if (gameState.scene === "game" && renderer !== null) {
+    if ((gameState.scene === "game" || gameState.scene === "menu") && renderer !== null) {
         renderer.draw(gameState);
-        debugRenderer.draw(gameState);
+        //debugRenderer.draw(gameState);
     }
 
     requestAnimationFrame(frame);
@@ -98,5 +105,6 @@ const buildSliders = () => {
     };
 };
 
-buildSliders();
+// buildSliders();
+
 frame();

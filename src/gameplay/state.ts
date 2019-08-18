@@ -33,6 +33,14 @@ export type GameSceneState = {
     wonTime: number,
     bullets: {pos: vec2, vel: vec2}[],
     health: number,
+    dead: number,
+    challenge: number,
+};
+
+export type LoadMenuState = {
+    scene: 'menu',
+    time: number,
+    clicked: number,
 };
 
 export type TransitionSceneState = {
@@ -40,6 +48,7 @@ export type TransitionSceneState = {
     newCave: Cave,
     newGameRenderer: GameRenderer,
     time: number,
+    challenge: number,
 };
 
 
@@ -58,8 +67,7 @@ const getLockedAngle = (angle: number): number => {
 };
 
 
-
-export type GameState = GameSceneState | TransitionSceneState;
+export type GameState = LoadMenuState | GameSceneState | TransitionSceneState;
 
 export const getLightsForGameState = (state: GameState): Light[] => {
     if (state.scene !== 'game') return [];
@@ -137,7 +145,11 @@ export const getLightsForGameState = (state: GameState): Light[] => {
 
 const stepGameScene = (prevState: GameSceneState, inputs: InputState): GameState => {
     if (prevState.wonTime > 0 && prevState.time > prevState.wonTime + END_FADE) {
-        return GameState.createTransition(globalGL);
+        return GameState.createTransition(globalGL, prevState.challenge + 1);
+    }
+
+    if (prevState.dead >= END_FADE) {
+        return GameState.createMenu(globalGL);
     }
 
     const state: GameSceneState = {
@@ -156,11 +168,13 @@ const stepGameScene = (prevState: GameSceneState, inputs: InputState): GameState
         wonTime: prevState.wonTime,
         bullets: prevState.bullets,
         health: 3,
+        dead: prevState.dead > 0 ? prevState.dead + 1 : 0,
+        challenge: prevState.challenge,
     };
 
     const alreadyWon = state.wonTime > 0;
 
-    if (alreadyWon) {
+    if (alreadyWon || state.dead > 0) {
         state.playerVel[0] *= 0.95;
         state.playerVel[1] *= 0.95;
     } 
@@ -184,7 +198,7 @@ const stepGameScene = (prevState: GameSceneState, inputs: InputState): GameState
     state.cameraPos[0] += (targetCameraPos[0] - state.cameraPos[0]) / 10;
     state.cameraPos[1] += (targetCameraPos[1] - state.cameraPos[1]) / 10;
 
-    if (alreadyWon) return state;
+    if (alreadyWon || state.dead > 0) return state;
 
     state.cave.edges.forEach(blob => {
         const col = circleCollision(blob, state.playerPos[0], state.playerPos[1], 3 / 256);
@@ -244,6 +258,12 @@ const stepGameScene = (prevState: GameSceneState, inputs: InputState): GameState
             const col = circleCollision(state.cave.edges[i], b.pos[0], b.pos[1], 3 / 256);
             if(col) return false;
         }
+
+        if (vec2.sqrDist(state.playerPos, b.pos) < (2 / 256)*(2 / 256)) {
+            state.dead = 1;
+            return false;
+        }
+
         return true;
     });
 
@@ -270,16 +290,52 @@ const stepGameScene = (prevState: GameSceneState, inputs: InputState): GameState
 };
 
 const stepTransitionScene = (prevState: TransitionSceneState, inputs: InputState) :GameState => {
-    return GameState.createGameScene(prevState.newCave);
+    return GameState.createGameScene(prevState.newCave, prevState.challenge);
 };
+
+const stepMenu = (prevState: LoadMenuState, inputs: InputState) :GameState => {
+    prevState.time++;
+
+    if (prevState.clicked < 0 && inputs.mouseDown) {
+        prevState.clicked = prevState.time;
+    }
+
+    if (prevState.clicked > 0 && prevState.time > prevState.clicked + 30) {
+        return GameState.createTransition(globalGL, 0);
+    }
+
+    return prevState;
+};
+
 
 const TEXTURES = [
     'ship.png',
     'normals.png',
+    'title.png',
+    'score0.png',
+    'score1.png',
+    'score2.png',
+    'score3.png',
+    'score4.png',
+    'score5.png',
+    'score6.png',
+    'score7.png',
+    'score8.png',
+    'score9.png',
+    'score10.png'
 ];
 
 export const GameState = {
-    createGameScene: (cave: Cave): GameState => ({
+    createMenu: (gl: WebGLRenderingContext): GameState => {
+        globalGL = gl;
+        return {
+            scene: "menu",
+            clicked: -1,
+            time: 0,
+        };
+    },
+
+    createGameScene: (cave: Cave, challenge: number): GameState => ({
         scene: 'game',
         cave,
         time: 0,
@@ -295,19 +351,22 @@ export const GameState = {
         wonTime: -1,
         bullets: [],
         health: 3,
+        dead: 0,
+        challenge,
     }),
 
-    createTransition: (gl: WebGLRenderingContext): GameState => {
+    createTransition: (gl: WebGLRenderingContext, challenge: number): GameState => {
         globalGL = gl;
 
         //const cave = generateCave(1339, .7);
-        const cave = generateCave(Math.floor(Math.random() * 100000000), .7);
+        const cave = generateCave(Math.floor(Math.random() * 100000000), .7, challenge);
         const renderer = new GameRenderer(gl, cave, TEXTURES);
 
         return {
             scene: 'transition',
             newCave: cave,
             newGameRenderer: renderer,
+            challenge,
             time: 0,
         };
     },
@@ -316,6 +375,7 @@ export const GameState = {
         switch (prevState.scene) {
             case "game": return stepGameScene(prevState, inputs);
             case "transition": return stepTransitionScene(prevState, inputs);
+            case "menu": return stepMenu(prevState, inputs);
         }
         return prevState;
     },

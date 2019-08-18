@@ -8,38 +8,25 @@ export type InputState = {
 
 export class InputGrabber {
     private readonly eventBinder: EventBinder;
-    private readonly canvas: HTMLCanvasElement;
-    private readonly keys: {[code:number]: boolean} = {};
     private readonly mouseScreenPoint: vec2;
 
     private mouseDown: boolean;
-    private canvasBoundingRect: { left: number, top: number };
 
-    constructor(canvas: HTMLCanvasElement) {
-        document.onkeydown = k => this.keys[k.keyCode] = true;
-        document.onkeyup = k => delete this.keys[k.keyCode];
-
+    constructor() {
         this.eventBinder = new EventBinder(this);
-        this.canvas = canvas;
         this.mouseDown = false;
         this.mouseScreenPoint = vec2.create();
-        this.canvasBoundingRect = { left: 0, top: 0 };
 
-        this.eventBinder.bind(canvas, 'mousemove',  this.onMouseMove);
-        this.eventBinder.bind(canvas, 'mousedown',  this.onMouseDown);
-        this.eventBinder.bind(canvas, 'mouseup',    this.onMouseButtonNegative);
-        this.eventBinder.bind(canvas, 'mouseout',   this.onMouseButtonNegative);
-        this.eventBinder.bind(canvas, 'mouseleave', this.onMouseButtonNegative);
-
-        this.eventBinder.bind(window, 'scroll', this.onWindowChange);
-        this.eventBinder.bind(window, 'resize', this.onWindowChange);
-
-        this.onWindowChange();
+        this.eventBinder.bind(document, 'mousemove',  this.onMouseMove);
+        this.eventBinder.bind(document, 'mousedown',  this.onMouseDown);
+        this.eventBinder.bind(document, 'mouseup',    this.onMouseButtonNegative);
+    //  this.eventBinder.bind(document, 'mouseout',   this.onMouseButtonNegative);
+    //  this.eventBinder.bind(document, 'mouseleave', this.onMouseButtonNegative);
     }
 
     getCurrentState(): InputState {
         return {
-            mouseRads: Math.atan2(this.mouseScreenPoint[1] - .5, this.mouseScreenPoint[0] - .5),
+            mouseRads: Math.atan2(this.mouseScreenPoint[1], this.mouseScreenPoint[0]),
             mouseDown: this.mouseDown,
         };
     }
@@ -52,15 +39,11 @@ export class InputGrabber {
         this.mouseDown = false;
     }
 
-    private onWindowChange() {
-        const clientRect = this.canvas.getBoundingClientRect();
-        this.canvasBoundingRect.left = clientRect.left  + this.canvas.clientLeft;
-        this.canvasBoundingRect.top = clientRect.top + this.canvas.clientTop;
-    }
-
     private onMouseMove(e: MouseEvent) {
-        this.mouseScreenPoint[0] = (e.clientX - this.canvasBoundingRect.left) / this.canvas.width;
-        this.mouseScreenPoint[1] = 1 - (e.clientY - this.canvasBoundingRect.top)  / this.canvas.height;
+        this.mouseScreenPoint[0] =  2 * (e.clientX / window.innerWidth - 0.5);
+        this.mouseScreenPoint[1] = -2 * (e.clientY / window.innerHeight - 0.5);
+
+        console.log(this.mouseScreenPoint);
     }
 
     release() {

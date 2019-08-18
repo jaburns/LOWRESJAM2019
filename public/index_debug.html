@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>*</title>
+        <style>
+            html, body {
+                background-color: #333;
+                text-align: center;
+                font-family: sans-serif;
+                color: white;
+            }
+            canvas {
+                background-color: black;
+                border: 10px solid #555;
+            }
+            .slider-label {
+                text-align: right;
+                display: inline-block;
+                width: 200px;
+            }
+            .slider-input {
+                width: 400px;
+            }
+            .slider-value {
+                text-align: left;
+                display: inline-block;
+                width: 100px;
+            }
+            
+        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div id="canvas-holder">
+            <canvas id="game-canvas" width="384" height="384"></canvas>
+            <canvas id="debug-canvas" width="400" height="400"></canvas>
+        </div>
+        <div id="sliders">
+            <template id="slider-template">
+                <div>
+                    <span class="slider-label">Doge</span>
+                    <input class="slider-input" id="slider0" type="range" min="0" max="1" step="0.01" width="500" />
+                    <span class="slider-value">42</span>
+                </div>
+            </template>
+        </div>
+        <div>
+            <input type="button" id="save-numbers" value="Save Numbers" />
+        </div>
+    </body>
+    <script src="bundle.js"></script>
+</html>

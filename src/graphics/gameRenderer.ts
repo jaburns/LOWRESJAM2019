@@ -1,4 +1,4 @@
-import { GameState, getLightsForGameState, Light, GameSceneState } from "gameplay/state";
+import { GameState, getLightsForGameState, Light, GameSceneState, LoadMenuState } from "gameplay/state";
 import { Cave } from "caveGenerator";
 import { drawCave, CaveTextures } from "graphics/caveRenderer";
 import { FrameBufferTexture } from "./frameBufferTexture";
@@ -75,16 +75,19 @@ export class GameRenderer {
     private readonly backgroundTex: WebGLTexture;
     private texturePack: TexturePack | null = null;
 
-    constructor(gl: WebGLRenderingContext, cave: Cave, texturePaths: string[]) {
+    constructor(gl: WebGLRenderingContext, cave: Cave | null, texturePaths: string[]) {
         this.gl = gl;
 
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.disable(gl.DEPTH_TEST);
 
-        this.caveTextures = drawCave(gl, cave, MAP_SIZE);
+        if (cave !== null) {
+            this.caveTextures = drawCave(gl, cave, MAP_SIZE);
+            this.backgroundTex = this.makeBackgroundTex();
+        }
+
         this.screenBuffer = new FrameBufferTexture(gl, 64, 64, 'nearest');
-        this.backgroundTex = this.makeBackgroundTex();
 
         this.loadTexturePackAsync(texturePaths);
     }
@@ -96,7 +99,9 @@ export class GameRenderer {
         gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer.framebuffer);
         gl.viewport(0, 0, BG_SIZE, BG_SIZE);
 
-        drawBuffer(gl, getShaders(gl).bufferCopy, this.caveTextures.bg);
+        drawBuffer(gl, getShaders(gl).bufferCopy, this.caveTextures.bg, shader => {
+            gl.uniform1f(gl.getUniformLocation(shader, 'u_fade'), 1);
+        });
         
         return frameBuffer.releaseTexture();
     };
@@ -114,13 +119,32 @@ export class GameRenderer {
         });
     }
 
-    draw(state: GameSceneState) {
+    draw(state: GameSceneState | LoadMenuState) {
         const gl = this.gl;
 
         if (this.texturePack === null) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             gl.clearColor(0, 0, 0, 1);
             gl.clear(gl.COLOR_BUFFER_BIT);
+            return;
+        }
+
+        if (state.scene === 'menu') {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.screenBuffer.framebuffer);
+            gl.viewport(0, 0, 64, 64);
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            drawBuffer(gl, getShaders(gl).bufferCopy, this.texturePack['title']!, shader => {
+                const fade = state.clicked > 0 ? 1 - (state.time - state.clicked) / 30 : state.time < 30 ? state.time / 30 : 1;
+                gl.uniform1f(gl.getUniformLocation(shader, 'u_fade'), fade);
+            });
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            drawBuffer(gl, getShaders(gl).bufferCopy, this.screenBuffer.texture, shader => {
+                gl.uniform1f(gl.getUniformLocation(shader, 'u_fade'), 1);
+            });
             return;
         }
 
@@ -146,10 +170,14 @@ export class GameRenderer {
         if (startingFade > 1) startingFade = 1;
         let endingFade = state.wonTime > 0 ? 1 - (state.time - state.wonTime) / END_FADE : 1;
         if (endingFade < 0) endingFade = 0;
-        const masterBrightness = startingFade * endingFade;
+        let deadFade = state.dead > 0 ? 1 - (state.dead / END_FADE) : 1;
+        if (deadFade < 0) deadFade = 0;
+
+        const masterBrightness = startingFade * endingFade * deadFade;
 
         drawBuffer(gl, getShaders(gl).drawCave, null, shader => {
             gl.activeTexture(gl.TEXTURE0);
+
             gl.bindTexture(gl.TEXTURE_2D, this.backgroundTex);
             gl.uniform1i(gl.getUniformLocation(shader, "u_tex"), 0);
 
@@ -174,7 +202,7 @@ export class GameRenderer {
         drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(state.dudes.length > 0 ? 0 : 1,3), state.cameraPos, lights, state.cave.placements.door);
         drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(2,3), state.cameraPos, lights, vec2.fromValues(state.cave.placements.door[0], state.cave.placements.door[1] - 8/256));
 
-        if (state.wonTime < 0) {
+        if (state.wonTime < 0 && state.dead < 1) {
             drawBuffer(gl, getShaders(gl).sprite, null, shader => {
                 gl.activeTexture(gl.TEXTURE0);
                 gl.bindTexture(gl.TEXTURE_2D, this.texturePack!['ship']);
@@ -230,10 +258,16 @@ export class GameRenderer {
             drawSprite(gl, this.texturePack!, masterBrightness, vec2.fromValues(3,3), state.cameraPos, lights, bullet.pos);
         });
 
+        drawBuffer(gl, getShaders(gl).bufferCopy, this.texturePack['score'+(10-state.dudes.length)], shader => {
+            gl.uniform1f(gl.getUniformLocation(shader, 'u_fade'), masterBrightness);
+        });
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-        drawBuffer(gl, getShaders(gl).bufferCopy, this.screenBuffer.texture);
+        drawBuffer(gl, getShaders(gl).bufferCopy, this.screenBuffer.texture, shader => {
+            gl.uniform1f(gl.getUniformLocation(shader, 'u_fade'), 1);
+        });
     }
 }
 

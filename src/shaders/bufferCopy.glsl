@@ -1,6 +1,7 @@
 precision highp float;
 
 uniform sampler2D u_tex;
+uniform float u_fade;
 
 varying vec2 v_uv;
 
@@ -19,7 +20,7 @@ varying vec2 v_uv;
 
     void main()
     {
-        gl_FragColor = texture2D(u_tex, v_uv);
+        gl_FragColor = texture2D(u_tex, v_uv) * u_fade;
     }
 
 #endif

@@ -89,13 +89,13 @@ const fixWindingDirection = (contour: vec2[]): vec2[] => {
     return contour;
 };
 
-export const generateCave = (seed: number, scaleDown: number = 1): Cave => 
-    generateCaveVerbose(seed, scaleDown).cave;
+export const generateCave = (seed: number, scaleDown: number = 1, challenge: number): Cave => 
+    generateCaveVerbose(seed, scaleDown, challenge).cave;
 
 export const generatePartialAutomatonResult = (seed: number, generation: number): Grid<boolean> =>
     runCellularAutomaton(75, 75, seed, 0.48, 5, 4, generation);
 
-export const generateCaveVerbose = (seed: number, scaleDown: number): { cave: Cave, details: CaveBuildDetails } => {
+export const generateCaveVerbose = (seed: number, scaleDown: number, challenge: number): { cave: Cave, details: CaveBuildDetails } => {
     const automatonResult = runCellularAutomaton(75, 75, seed, 0.48, 5, 4, 30);
 
     const coloredGrid = Grid.map(automatonResult, (x, y, val) => val ? -1 : 0);
@@ -154,7 +154,7 @@ export const generateCaveVerbose = (seed: number, scaleDown: number): { cave: Ca
         cave: {
             edges: fixedContours,
             triangles,
-            placements: getCavePlacements(fixedContours),
+            placements: getCavePlacements(fixedContours, challenge),
         },
         details: {
             automatonResult,

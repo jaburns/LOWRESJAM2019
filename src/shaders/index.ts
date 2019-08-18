@@ -53,7 +53,7 @@ const compileShader = (gl: WebGLRenderingContext, name: string, body: string): W
     gl.compileShader(vertShader);
 
     const vertLog = gl.getShaderInfoLog(vertShader);
-    if (vertLog === null || vertLog.length > 0) {
+    if (vertLog === null || vertLog.length > 0 && vertLog.indexOf('ERROR') > 0) {
         document.head!.parentNode!.removeChild(document.head!);
         document.body.innerHTML = errorHTML('vertex', name, vertLog as string);
         throw new Error('Error compiling shader: ' + name);
@@ -64,7 +64,7 @@ const compileShader = (gl: WebGLRenderingContext, name: string, body: string): W
     gl.compileShader(fragShader);
 
     const fragLog = gl.getShaderInfoLog(fragShader);
-    if (fragLog === null || fragLog.length > 0) {
+    if (fragLog === null || fragLog.length > 0 && fragLog.indexOf('ERROR') > 0) {
         document.head!.parentNode!.removeChild(document.head!);
         document.body.innerHTML = errorHTML('fragment', name, fragLog as string);
         throw new Error('Error compiling shader: ' + name);
