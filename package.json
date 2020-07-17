@@ -12,7 +12,7 @@
     "awesome-typescript-loader": "5.2.1",
     "express": "4.17.1",
     "gl-matrix": "3.0.0",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "pre-build-webpack": "0.1.0",
     "raw-loader": "3.1.0",
     "ts-essentials": "3.0.0",
